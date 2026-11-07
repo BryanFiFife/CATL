@@ -318,13 +318,18 @@ class Gateway:
         self.available: dict[str, dict[str, Any]] = {}
         self.backend_ready = False
         self._legacy_initialized = False
+        # Shared with the protected broker operator channel.  This lock
+        # linearises permission-tightening commands against the FINAL dispatch
+        # authorisation (controls, rate permit and signed dispatch intent).
+        # It is never held during the untrusted backend's execution.
+        self.dispatch_gate = threading.RLock()
 
     def _ensure_backend(self) -> None:
         if self.backend_ready:
             return
         response = self.backend.request("initialize", {
             "protocolVersion": "2025-11-25",
-            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.10.0rc1"}})
+            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.11.0rc1"}})
         if "error" in response or not isinstance(response.get("result"), dict):
             raise RuntimeError("backend_initialization_failed")
         self.backend.notify("notifications/initialized")
@@ -409,7 +414,7 @@ class Gateway:
             return {"jsonrpc": "2.0", "id": id_, "result": {
                 "protocolVersion": "2025-11-25",
                 "capabilities": {"tools": {"listChanged": False}},
-                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.10.0rc1"}}}
+                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.11.0rc1"}}}
         if method == "tools/list":
             try:
                 result = {"jsonrpc": "2.0", "id": id_, "result": {"tools": self._refresh()}}
@@ -483,21 +488,26 @@ class Gateway:
                 approval_id = self.state.request(binding, {"agent": self.policy.agent_id, "tool": name, "arguments": args})
                 self._record(name, binding, "approve", "awaiting_human")
                 return error(id_, "human_approval_required", data={"approval_id": approval_id})
-            # Recheck just before dispatch; an already in-flight action cannot be revoked.
-            latest = self.state.controls()
-            if (not latest["gateway_enabled"] or not latest["audit_enabled"]
-                    or name in latest["disabled_tools"]
-                    or (effect == "approve" and not latest["approvals_enabled"])
-                    or (verifier is not None and not latest["verification_enabled"])):
-                self._record(name, binding, "deny", "operator_control_changed_before_dispatch")
-                return error(id_, "operator_control_changed_before_dispatch")
-            if not self.state.acquire_rate(self.policy.agent_id, name, self.policy.rate_limits.get(name, 60)):
-                self._record(name, binding, "deny", "rate_limit_exceeded")
-                return error(id_, "rate_limit_exceeded")
-            # Unique dispatch identity persists BEFORE possible side effects.
-            # A crash after this point leaves an auditable, quarantined action.
-            action_id = secrets.token_hex(16)
-            self._record(name, binding, effect, "dispatch_intent", action_id=action_id)
+            # The operator channel acquires the SAME dispatch_gate while
+            # committing a control change.  A completed Pause/Disable cannot
+            # be overtaken by an action whose intent was not yet committed.
+            # A previously recorded dispatch intent is already in flight and
+            # may have effects even if the backend later times out.
+            with self.dispatch_gate:
+                latest = self.state.controls()
+                if (not latest["gateway_enabled"] or not latest["audit_enabled"]
+                        or name in latest["disabled_tools"]
+                        or (effect == "approve" and not latest["approvals_enabled"])
+                        or (verifier is not None and not latest["verification_enabled"])):
+                    self._record(name, binding, "deny", "operator_control_changed_before_dispatch")
+                    return error(id_, "operator_control_changed_before_dispatch")
+                if not self.state.acquire_rate(self.policy.agent_id, name, self.policy.rate_limits.get(name, 60)):
+                    self._record(name, binding, "deny", "rate_limit_exceeded")
+                    return error(id_, "rate_limit_exceeded")
+                # This signed event marks the instant the action becomes
+                # in-flight.  The real-world effect may still be uncertain.
+                action_id = secrets.token_hex(16)
+                self._record(name, binding, effect, "dispatch_intent", action_id=action_id)
             try:
                 reply = self.backend.request("tools/call", {"name": name, "arguments": args})
             except (RuntimeError, TimeoutError, ValueError, OSError) as exc:
