@@ -291,6 +291,10 @@ The software Ed25519 operator signer now fails closed for **private-key use and 
 
 CATL's native JSON decoder now rejects exponent overflow (`1e999`) and nonzero decimal underflow (`1e-9999`) before those tokens can influence agent commands, policies or operator data. [Exact regression evidence](docs/JSON_NUMBER_BOUNDARY_V012.md): 13 native-module tests passed; 15,000 deterministic numeric inputs exercised. **This is not a full native integration test or a completed roadmap gate.**
 
+### 🧪 Local-only native acceptance runner (manual, no hosted CI)
+
+[`tools/offline_native_acceptance.py`](tools/offline_native_acceptance.py) verifies the tracked Git source file list, SHA-256 manifest and checksum index **before running the full `test_*.py` unit suite offline**. It refuses a dirty or mismatched checkout, bounds hangs, and writes `acceptance.json` plus `native-unittest.log` outside the source tree. **12 isolated runner regression tests passed.** The full private CATL suite was **not** executed in this development environment. [Read the offline acceptance instructions](docs/OFFLINE_NATIVE_ACCEPTANCE.md).
+
 ## 🩺 Broker preflight (Linux)
 
 Run as the *broker* OS account **after** initial state and external checkpoint

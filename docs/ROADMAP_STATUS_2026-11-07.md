@@ -71,3 +71,8 @@ Fixed `src/catl/store.py::State.verify()` to hold the independent anchor lock fr
 ## JSON numeric decoding boundary — 7 November 2026
 
 Fixed native `src/catl/crypto.py::strict_loads` so JSON exponent overflow can no longer silently convert to Python infinity, and a nonzero numeric literal underflowing to zero fails closed. The unchanged authenticated module was first verified against Git blob `9ca67f3f2e3f198faf60805463b383a1c75f0f84`. After patching, **13 focused native-module tests passed**, plus **15,000** deterministic numeric inputs (7,786 valid, 3,465 underflow rejected, 3,749 overflow rejected; zero unexpected results). No native `Gateway`, broker, systemd service or Hermes process was executed by this parser-only test. Roadmap remains **7 checked / 6 open**. See [test evidence](JSON_NUMBER_BOUNDARY_V012.md).
+
+
+## Offline full-native unit-suite acceptance runner — 7 November 2026
+
+Added a fail-closed standalone `tools/offline_native_acceptance.py` runner, plus twelve focused tests using disposable Git fixtures. It verifies a clean local Git commit, optional pinned SHA, tracked file paths, all source SHA-256 values and the checksum index before executing `python -m unittest discover -s tests -p test_*.py -v` with an environment allowlist, bounded timeout and process-group cleanup. It produces structured JSON plus log hash. **12/12 isolated runner tests passed; the complete CATL unit suite itself was NOT run in this container.** Rootless four-UID E2E tests, live Hermes, external effects, real Windows/macOS protected mode and independent assessment remain OPEN. [Execution instructions](OFFLINE_NATIVE_ACCEPTANCE.md).
