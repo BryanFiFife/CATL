@@ -61,6 +61,7 @@ jobs:
           python -m unittest discover -s tests -p test_windows_portability.py -v
           python -m catl --help
           python -m catl doctor --help
+          python -m unittest discover -s tests -p test_host_audit.py -v
 
   linux-graphical-and-identity:
     runs-on: ubuntu-latest
@@ -91,6 +92,56 @@ jobs:
           chmod -R a+rX "$stage"
           sudo env "PYTHONPATH=$stage/src" "$(command -v python)" "$stage/tests/integration_rootless_e2e.py"
 
+  security-scans:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.13'
+      - name: Install scanners
+        run: python -m pip install --disable-pip-version-check bandit pip-audit
+      - name: High-severity / high-confidence Python static scan
+        run: bandit -q -r src/catl -ll -ii
+      - name: Published dependency vulnerability database check
+        run: pip-audit --no-deps --requirement requirements-security-audit.txt
+
+  linux-host-preflight-recovery:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.13'
+      - name: Install runtime
+        run: python -m pip install --disable-pip-version-check -e .
+      - name: Synthetic database rollback drill must fail closed
+        run: python tools/recovery_drill.py
+      - name: Parse unit templates without requiring a running systemd host
+        shell: bash
+        run: |
+          stage="$(mktemp -d)"
+          trap 'rm -rf "$stage"' EXIT
+          for unit in broker backend; do
+            sed -E 's@/usr/local/bin/catl@/usr/bin/true@g;s/BROKER_UID/1001/g;s/BACKEND_IPC_GID/1002/g;s/AGENT_UID/1003/g;s/OPERATOR_UID/1004/g;s/AGENT_GID/1005/g;s/OPERATOR_GID/1006/g;s/TOOLS_UID/1007/g' \
+              "packaging/systemd/catl-${unit}.service.example" > "$stage/catl-${unit}.service"
+          done
+          systemd-analyze verify "$stage/catl-broker.service" "$stage/catl-backend.service"
+      - name: No live services must never be marked attested
+        run: |
+          python - <<'PYHOST'
+          import json, subprocess, sys
+          proc=subprocess.run([sys.executable,'-m','catl','host-audit'],capture_output=True,text=True)
+          data=json.loads(proc.stdout)
+          assert proc.returncode != 0 and not data['passed'], data
+          PYHOST
+
   package-smoke:
     runs-on: ubuntu-latest
     steps:
@@ -113,3 +164,4 @@ jobs:
           /tmp/catl-candidate-venv/bin/python -m pip install dist/*.whl
           /tmp/catl-candidate-venv/bin/catl --help
           /tmp/catl-candidate-venv/bin/catl doctor --help
+          /tmp/catl-candidate-venv/bin/catl host-audit --help

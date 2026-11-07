@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "scenario": "rollback_database_without_rewinding_independent_anchor",
+  "initial_count": 0,
+  "advanced_count": 1,
+  "restored_database_rejected": true,
+  "host_claim": "none; synthetic isolated rehearsal only"
+}

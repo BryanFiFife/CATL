@@ -1,0 +1,1 @@
+PASS static sanity scan: no forbidden runtime constructs or TCP socket families

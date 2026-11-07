@@ -1,4 +1,4 @@
-# 🔒 CATL v0.5 — security and disclosure
+# 🔒 CATL v0.7.0rc1 — security and disclosure
 
 **Private evaluation. Not production certified and not guaranteed free of backdoors.** CATL does not eliminate the need for OS isolation, trusted update provenance, independent audit or a separately verified approval channel.
 
@@ -10,3 +10,7 @@
 - **Report vulnerabilities privately** through Caledapt's established contact channel. Do not post exploit details, credentials or customer data in public issues.
 
 Read [v0.5 audit](docs/SECURITY_AUDIT_V05.md), [rootless Linux deployment](docs/DEPLOY_ROOTLESS_LINUX.md) and [architecture](docs/ARCHITECTURE.md).
+
+## Current release evidence
+
+The local engineering review is at [docs/SECURITY_AUDIT_V07.md](docs/SECURITY_AUDIT_V07.md), with explicit unresolved production gates in [docs/RELEASE_GATES_V07.md](docs/RELEASE_GATES_V07.md). No unaudited network service, key access from the agent, or automated trust recovery is included in the protected Linux broker.

@@ -98,3 +98,11 @@ Evaluation-only hardening templates are available at `packaging/systemd/`. They 
 ### v0.6 signed throttling change
 
 The existing mutable `tool_rate` table is no longer used for enforcement. Permitted tool attempts record an authenticated `rate_permit` receipt. This changes receipt counts and increases time proportional to ledger size. Never prune the signed ledger without a reviewed archive/rotation protocol that preserves the independent anchor.
+
+## v0.7 live systemd and recovery acceptance
+
+Before allowing any real customer tool to run, render and install the reviewed service templates, validate them with `systemd-analyze verify`, and run `catl host-audit` on the **actual** host. That command reads the named units' active state, configured service users and privilege, kernel, device, filesystem and network restrictions. It does not modify or automatically correct unit files. A zero exit is a unit-properties preflight, **not** proof that kernel MAC, firewall or operator account is secure.
+
+The broker/tool-service users and IPC group memberships must still be checked with `id`, `stat`, `namei` and a real adversarial deployment. Confirm that neither the agent nor backend has access to policy, key, checkpoint or the operator socket.
+
+For a disposable replay test run `python tools/recovery_drill.py`. It creates fresh temporary state, advances a signed checkpoint, deliberately restores an old database and must reject execution. Never point this script at production state. For production recovery, preserve forensic snapshots and involve an authorised operator; do not automatically recreate an anchor.

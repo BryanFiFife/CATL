@@ -5,12 +5,12 @@
 
 **Local-first · Harness-independent · Default-deny · Human-controlled**
 
-![Release](https://img.shields.io/badge/release-v0.6.0rc1-7c3aed?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Linux_tests-203_passed-16a34a?style=for-the-badge)
+![Release](https://img.shields.io/badge/release-v0.7.0rc1-7c3aed?style=for-the-badge)
+![Tests](https://img.shields.io/badge/local_tests-220_passed-16a34a?style=for-the-badge)
 ![Broker](https://img.shields.io/badge/Linux_broker-rootless_UID_auth-087f8c?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-tool_subset-2563eb?style=for-the-badge)
 ![Security](https://img.shields.io/badge/default-DENY-dc2626?style=for-the-badge)
-[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.6.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
+[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.7.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)
 ![Offline](https://img.shields.io/badge/offline-first-0f766e)
@@ -18,7 +18,7 @@
 
 🇬🇧 Built by **[Caledapt](https://caledapt.com)** · *Make AI useful. Not mysterious.*
 
-**🔒 Private evaluation · 🧪 Engineering prototype · 🚫 Not certified or immune to backdoors**
+**🔒 Private evaluation · 🧪 Linux hardening candidate · 🚫 Not certified or immune to backdoors**
 
 </div>
 
@@ -48,18 +48,16 @@ flowchart TD
   R --> S[✅ Result / ⚠️ uncertain / ❌ failure]
 ```
 
-## 🧪 Release candidate: v0.6.0rc1
+## 🧪 Release candidate: v0.7.0rc1
 
 **Candidate status: not yet general availability.** Windows protected process isolation,
 independent pen testing, full Windows protected execution, full modern MCP conformance and remote
 side-effect verification remain unpassed release gates. See
-[release gates](docs/RELEASE_GATES_V06.md) and [security review](docs/SECURITY_AUDIT_V06.md).
+[release gates](docs/RELEASE_GATES_V07.md) and [security review](docs/SECURITY_AUDIT_V07.md).
 
-**New:** authenticated rate-limits (no unsigned SQLite counter bypass), trusted backend
-initialization, streamed audit-chain verification, a safe `path_within` policy condition,
-and `catl doctor` Linux deployment checks. Review [change log](docs/CHANGES_V06.md).
+**New in v0.7:** hardened policy file ownership, immediate approval revocation when the operator disables a safety feature, and fail-closed validation of untrusted tool replies. The current 2026 MCP `_meta` envelope is checked for the supported stdio subset. `catl host-audit` provides read-only checks of the live Linux systemd service profile; a separate recovery drill proves that database-only rollback is rejected in a disposable environment. [Full notes](docs/RELEASE_NOTES_V07.md).
 
-## ✨ What's in v0.6.0rc1?
+## ✨ What's in v0.7.0rc1?
 
 | Capability | Evidence / limits |
 |---|---|
@@ -78,6 +76,17 @@ and `catl doctor` Linux deployment checks. Review [change log](docs/CHANGES_V06.
 | 🔌 MCP 2025 legacy + 2026-07-28 **tool-only** subset | Full protocol conformance, HTTP and MRTR are not supported |
 
 **What is *not* promised:** no-backdoor guarantee, Windows AppContainer enforcement, independent penetration-test certification, remote payment/email verification, arbitrary network egress blocking or a complete MCP implementation. The protected broker currently supports **Linux only**, and its deployment needs distinct OS users and protected directories.
+
+## 🧭 Before deploying on Linux
+
+`catl doctor` checks policy/state/key/anchor configuration; `catl host-audit` reads **actual active systemd units** and fails if restrictions are missing. Neither can prove the kernel or operator account is uncompromised. Example units are in `packaging/systemd/` and must be adapted, installed and verified on a real host. The `tools/recovery_drill.py` script deliberately damages only synthetic temporary state and must reject an old database when the checkpoint has advanced.
+
+```bash
+catl host-audit --broker-unit catl-broker.service --backend-unit catl-backend.service
+python tools/recovery_drill.py
+```
+
+Never arm high-impact external-effect tools solely because these checks pass. An independent outcomes verifier and host review are still required.
 
 ## 🖥️ Minimise it. Control it. Inspect every tool.
 

@@ -1,0 +1,5 @@
+{
+  "passed": false,
+  "error": "RuntimeError: systemctl_show_failed:catl-broker.service",
+  "limitations": "No host sandbox attestation has been completed"
+}

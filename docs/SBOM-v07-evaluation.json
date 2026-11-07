@@ -1,0 +1,62 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-07T00:00:00Z",
+    "component": {
+      "type": "application",
+      "name": "caledapt-agent-trust",
+      "version": "0.7.0rc1"
+    },
+    "properties": [
+      {
+        "name": "scope",
+        "value": "Installed Python 3.13 Linux dependency inventory; versions may differ across other platforms; not a signed, fully locked supply chain."
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "jsonschema",
+      "version": "4.26.0",
+      "purl": "pkg:pypi/jsonschema@4.26.0"
+    },
+    {
+      "type": "library",
+      "name": "attrs",
+      "version": "26.1.0",
+      "purl": "pkg:pypi/attrs@26.1.0"
+    },
+    {
+      "type": "library",
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1",
+      "purl": "pkg:pypi/jsonschema-specifications@2025.9.1"
+    },
+    {
+      "type": "library",
+      "name": "referencing",
+      "version": "0.37.0",
+      "purl": "pkg:pypi/referencing@0.37.0"
+    },
+    {
+      "type": "library",
+      "name": "rpds-py",
+      "version": "2026.5.1",
+      "purl": "pkg:pypi/rpds-py@2026.5.1"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:pypi/jsonschema@4.26.0",
+      "dependsOn": [
+        "pkg:pypi/attrs@26.1.0",
+        "pkg:pypi/jsonschema-specifications@2025.9.1",
+        "pkg:pypi/referencing@0.37.0",
+        "pkg:pypi/rpds-py@2026.5.1"
+      ]
+    }
+  ]
+}
