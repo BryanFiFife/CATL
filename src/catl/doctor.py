@@ -61,6 +61,17 @@ def run_checks(*, config: Path, state_dir: Path, anchor_path: Path,
     try:
         policy = Policy.from_file(config)
         add('policy_integrity', 'pass', f'loaded {len(policy.tool_pins)} pinned tool definitions')
+        # We cannot infer from the tool name whether execution has external
+        # effects. A trusted reviewer must classify permitted tools that lack
+        # an independent postcondition as genuinely read-only.
+        permitted = {r.tool for r in policy.rules if r.effect != 'deny'}
+        unverified = sorted(permitted - set(policy.postconditions))
+        if unverified:
+            add('tool_effect_assurance', 'warn',
+                f'{len(unverified)} permitted tool(s) lack independent postconditions; '
+                'review as read-only or add a verifier')
+        else:
+            add('tool_effect_assurance', 'pass', 'all permitted tool rules have postconditions')
     except (OSError, ValueError, PermissionError, TypeError) as exc:
         add('policy_integrity', 'fail', f'{type(exc).__name__}: policy rejected')
 

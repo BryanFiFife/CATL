@@ -15,7 +15,7 @@ def _state(folder: Path) -> State:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.6.0 release candidate")
+    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.7.0rc1 Linux hardening candidate")
     sub = p.add_subparsers(dest="command", required=True)
     doctor = sub.add_parser("doctor", help="Preflight Linux broker state, identities and signed audit; no auto-repair")
     doctor.add_argument("--config", type=Path, required=True)
@@ -25,6 +25,11 @@ def main(argv: list[str] | None = None) -> int:
     doctor.add_argument("--operator-uid", type=int, required=True)
     doctor.add_argument("--backend-uid", type=int, required=True)
     doctor.add_argument("--strict", action="store_true", help="Treat unverified host controls as blockers")
+    audit_host = sub.add_parser("host-audit", help="Read-only systemd sandbox property checks; not a pentest")
+    audit_host.add_argument("--broker-unit", default="catl-broker.service")
+    audit_host.add_argument("--backend-unit", default="catl-backend.service")
+    audit_host.add_argument("--broker-user", default="catl-broker")
+    audit_host.add_argument("--backend-user", default="catl-tools")
     run = sub.add_parser("run", help="Run a pinned MCP stdio tool server behind the gateway")
     run.add_argument("--config", required=True, type=Path)
     run.add_argument("--backend-user", help="POSIX: drop child to a distinct non-root account; requires root supervisor")
@@ -97,6 +102,11 @@ def main(argv: list[str] | None = None) -> int:
     pin.add_argument("tool_definition", type=Path)
     args = p.parse_args(argv)
     try:
+        if args.command == "host-audit":
+            from .host_audit import run as host_audit_run
+            result = host_audit_run(args.broker_unit, args.backend_unit, args.broker_user, args.backend_user)
+            print(json.dumps(result, indent=2))
+            return 0 if result["passed"] else 3
         if args.command == "doctor":
             from .doctor import run_checks
             output = run_checks(config=args.config, state_dir=args.state_dir,

@@ -19,6 +19,41 @@ from .protocol import classify, modernize, discovery
 from .verifier import FileDigestVerifier
 from .schema import validate_arguments
 
+# The backend is untrusted even when a tool was present in a pinned catalogue.
+# Never pass an oversized or malformed tool reply into a success path.
+MAX_TOOL_REPLY_BYTES = 512 * 1024
+
+def checked_tool_reply(reply: dict[str, Any]) -> tuple[str, Any]:
+    if not isinstance(reply, dict) or ("result" in reply) == ("error" in reply):
+        raise ValueError("backend_response_ambiguous")
+    try:
+        raw = json.dumps(reply, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
+    except (TypeError, ValueError, RecursionError) as exc:
+        raise ValueError("backend_reply_not_json") from exc
+    if len(raw) > MAX_TOOL_REPLY_BYTES:
+        raise ValueError("backend_reply_oversized")
+    if "error" in reply:
+        # Backend error objects are untrusted. Never relay arbitrary backend
+        # metadata, nested objects or attacker-invented error codes to clients.
+        value = reply["error"]
+        if not isinstance(value, dict) or type(value.get("code")) is not int or not isinstance(value.get("message"), str):
+            raise ValueError("backend_rpc_error_invalid")
+        return "rpc_error", {"code": -32050, "message": "upstream_tool_error"}
+    result = reply["result"]
+    if not isinstance(result, dict) or type(result.get("isError", False)) is not bool:
+        raise ValueError("backend_tool_result_invalid")
+    content = result.get("content")
+    if not isinstance(content, list) or len(content) > 64:
+        raise ValueError("backend_tool_content_invalid")
+    for item in content:
+        if not isinstance(item, dict) or not isinstance(item.get("type"), str):
+            raise ValueError("backend_tool_content_invalid")
+        if item["type"] == "text" and not isinstance(item.get("text"), str):
+            raise ValueError("backend_tool_text_invalid")
+    # Strip backend-supplied _meta; it is untrusted tool data, not CATL
+    # authority. Non-metadata result fields are preserved for SDK clients.
+    return "result", {k: v for k, v in result.items() if k != "_meta"}
+
 
 class Backend(Protocol):
     def request(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]: ...
@@ -178,7 +213,7 @@ class Gateway:
             return
         response = self.backend.request("initialize", {
             "protocolVersion": "2025-11-25",
-            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.6.0-rc1"}})
+            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.7.0rc1"}})
         if "error" in response or not isinstance(response.get("result"), dict):
             raise RuntimeError("backend_initialization_failed")
         self.backend.notify("notifications/initialized")
@@ -259,7 +294,7 @@ class Gateway:
             return {"jsonrpc": "2.0", "id": id_, "result": {
                 "protocolVersion": "2025-11-25",
                 "capabilities": {"tools": {"listChanged": False}},
-                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.6.0-rc1"}}}
+                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.7.0rc1"}}}
         if method == "tools/list":
             try:
                 result = {"jsonrpc": "2.0", "id": id_, "result": {"tools": self._refresh()}}
@@ -344,15 +379,18 @@ class Gateway:
             except (RuntimeError, TimeoutError, ValueError, OSError) as exc:
                 self._record(name, binding, effect, f"transport_failure:{type(exc).__name__}")
                 return error(id_, "tool_transport_failure")
-            if "error" in reply:
+            try:
+                reply_kind, payload = checked_tool_reply(reply)
+            except ValueError:
+                # The side effect may already have happened. Do not present a
+                # malformed reply as success; leave explicit uncertain evidence.
+                self._record(name, binding, effect, "invalid_backend_result_side_effect_possible")
+                return error(id_, "backend_result_unverified_side_effect_possible")
+            if reply_kind == "rpc_error":
                 outcome = "backend_rpc_error"
-                result = {"jsonrpc": "2.0", "id": id_, "error": reply["error"]}
+                result = {"jsonrpc": "2.0", "id": id_, "error": payload}
             else:
-                outcome = "backend_reported_error" if isinstance(reply.get("result"), dict) and reply["result"].get("isError") is True else "backend_reported_result"
-                payload = reply.get("result")
-                if not isinstance(payload, dict):
-                    self._record(name, binding, effect, "invalid_backend_result")
-                    return error(id_, "backend_result_invalid")
+                outcome = "backend_reported_error" if payload.get("isError") is True else "backend_reported_result"
                 result = {"jsonrpc": "2.0", "id": id_, "result": payload}
             verifier = self.policy.postconditions.get(name)
             if verifier and outcome == "backend_reported_result":
