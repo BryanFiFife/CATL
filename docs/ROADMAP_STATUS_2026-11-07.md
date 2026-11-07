@@ -37,7 +37,7 @@ A checked feature is supported by code and internal tests, **not** an independen
 
 **GitHub Actions are deliberately manual-only** via `workflow_dispatch`. No push, pull-request, scheduled or automated hosted test runs are authorized by this update.
 
-**Important:** existing checked-in `RELEASE_MANIFEST.json` and `SHA256SUMS.txt` are out of date relative to the current source tree. Before distributing a source release, run `python tools/release_pack.py --output /tmp/catl-release-candidate.zip` and `python tools/release_pack.py --verify /tmp/catl-release-candidate.zip` in a trusted isolated build, review the regenerated manifests, and commit them only under manual-CI controls. **Do not treat the currently checked-in manifests as authoritative.** They are not cryptographically signed.
+**Integrity update:** `RELEASE_MANIFEST.json` and `SHA256SUMS.txt` were refreshed against this tracked source tree. They are **unsigned** and must be regenerated, independently verified and reviewed after every source change. Before distributing a source release, run `python tools/release_pack.py --output /tmp/catl-release-candidate.zip` then `python tools/release_pack.py --verify /tmp/catl-release-candidate.zip` in a trusted isolated build. The updated manifests are not equivalent to a signed release attestation.
 
 **GA blockers:** live Hermes E2E in a restricted profile, genuine protected host tests, independent pentest, hardware user presence, off-host audit witness, remote external-action verification and signed provenance. Do not promote this candidate to production or public GA.
 
