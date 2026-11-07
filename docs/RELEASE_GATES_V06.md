@@ -6,7 +6,7 @@ The scope of this candidate is a **local, rootless Linux MCP tool gateway** with
 
 | Gate | Result | Evidence / release condition |
 |---|---|---|
-| A1 — Regression tests | Local PASS | 200 Python unit/regression tests under Linux with Xvfb; rerun on the final archive |
+| A1 — Regression tests | Local PASS | 203 Python unit/regression tests under Linux with Xvfb; rerun on the final archive |
 | A2 — Real Linux identity isolation | Local PASS | Four-UID E2E: agent cannot approve, backend cannot read key, one-use consent and audit |
 | A3 — Authenticated rate limiting | Local PASS | Rate quotas now derive from HMAC-protected, anchored receipts; a forged legacy counter cannot lift limits |
 | A4 — Legacy MCP preinit boundary | Local PASS | No agent-controlled initialize or notification reaches the tool backend |
@@ -14,7 +14,7 @@ The scope of this candidate is a **local, rootless Linux MCP tool gateway** with
 | A6 — File path scope | Local PASS | `path_within` segment-aware lexical rule avoids sibling-prefix bypass; OS symlink controls still required |
 | A7 — Rootless host hardening | NOT ATTESTED | systemd sandbox, SELinux/AppArmor, filesystem ACL and egress must be independently checked on each deployment |
 | A8 — Windows/macOS security boundary | FAIL / unavailable | No Windows AppContainer/job/ACL solution or verified macOS identity broker |
-| A9 — Cross-platform CI | NOT VERIFIED | Pinned workflow committed; GitHub run results must be confirmed before publication |
+| A9 — CI | PENDING FINAL RUN | Full regression jobs on Linux/macOS; Windows is a separate limited portability/fail-closed smoke test, NOT a protected Windows broker. |
 | A10 — External action reconciliation | NOT IMPLEMENTED | No independent read-after-write for email, API, payments, refunds or device control |
 | A11 — Independent penetration test | NOT PERFORMED | Third-party assessment required for consequential actions |
 | A12 — Supply chain / signed provenance | PARTIAL | Per-file SHA-256 source manifest and local wheel install; no Sigstore attestation or signed release |

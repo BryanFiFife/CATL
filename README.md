@@ -6,7 +6,7 @@
 **Local-first · Harness-independent · Default-deny · Human-controlled**
 
 ![Release](https://img.shields.io/badge/release-v0.6.0rc1-7c3aed?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Linux_tests-200_passed-16a34a?style=for-the-badge)
+![Tests](https://img.shields.io/badge/Linux_tests-203_passed-16a34a?style=for-the-badge)
 ![Broker](https://img.shields.io/badge/Linux_broker-rootless_UID_auth-087f8c?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-tool_subset-2563eb?style=for-the-badge)
 ![Security](https://img.shields.io/badge/default-DENY-dc2626?style=for-the-badge)
@@ -138,7 +138,7 @@ xvfb-run -a env PYTHONPATH=src python -m unittest discover -s tests -q
 PYTHONPATH=src python tests/integration_rootless_e2e.py
 ```
 
-**Evidence:** 200 unit/regression tests passed locally under Linux / Python 3.13.5 with Xvfb, plus a real unprivileged four-UID broker ↔ backend ↔ agent ↔ operator exercise. The root test verified operator-channel denial, tool execution, one-use approval, audit validity and signing-key access denial. No independent penetration test or passing GitHub Actions matrix is claimed yet.
+**Evidence:** 203 unit/regression tests passed locally under Linux / Python 3.13.5 with Xvfb, plus a real unprivileged four-UID broker ↔ backend ↔ agent ↔ operator exercise. The root test verified operator-channel denial, tool execution, one-use approval, audit validity and signing-key access denial. No independent penetration test or passing GitHub Actions matrix is claimed yet.
 
 🧪 [v0.6.0rc1 audit](docs/SECURITY_AUDIT_V05.md) · 🐧 [Rootless deployment](docs/DEPLOY_ROOTLESS_LINUX.md) · 🗒️ [Release notes](docs/RELEASE_NOTES_V05.md) · 🔐 [Responsible disclosure](SECURITY.md)
 
