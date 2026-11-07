@@ -15,7 +15,7 @@ def _state(folder: Path) -> State:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.8.0rc1 Linux hardening candidate")
+    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.9.0rc1 Linux incident-quarantine candidate")
     sub = p.add_subparsers(dest="command", required=True)
     doctor = sub.add_parser("doctor", help="Preflight Linux broker state, identities and signed audit; no auto-repair")
     doctor.add_argument("--config", type=Path, required=True)
@@ -85,8 +85,11 @@ def main(argv: list[str] | None = None) -> int:
     operator = sub.add_parser("operator", help="Trusted admin RPC; never reads the audit key")
     operator.add_argument("--operator-socket", type=Path, required=True)
     op = operator.add_subparsers(dest="operation", required=True)
-    for command in ("status", "pending", "verify"):
+    for command in ("status", "pending", "verify", "incidents"):
         op.add_parser(command)
+    reconcile = op.add_parser("reconcile", help="Explicit human reconciliation of an uncertain action")
+    reconcile.add_argument("action_id")
+    reconcile.add_argument("--reference", required=True, help="External read-back evidence or incident ticket")
     toggle = op.add_parser("feature")
     toggle.add_argument("name", choices=["gateway_enabled","approvals_enabled","verification_enabled","audit_enabled"])
     toggle.add_argument("state", choices=["on","off"])
@@ -219,8 +222,22 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "operator":
             from .broker import OperatorClient
             client = OperatorClient(args.operator_socket)
-            if args.operation in ("status", "verify", "pending"):
-                result = client.status() if args.operation == "status" else client.verify() if args.operation == "verify" else client.list_pending()
+            if args.operation in ("status", "verify", "pending", "incidents"):
+                result = (client.status() if args.operation == "status" else
+                          client.verify() if args.operation == "verify" else
+                          client.list_pending() if args.operation == "pending" else client.open_incidents())
+            elif args.operation == "reconcile":
+                if not sys.stdin.isatty():
+                    raise PermissionError("interactive_terminal_required_for_reconciliation")
+                incident = next((x for x in client.open_incidents() if x["action_id"] == args.action_id), None)
+                if incident is None:
+                    raise ValueError("incident_not_found")
+                print(json.dumps(incident, indent=2, ensure_ascii=False))
+                phrase = f"RECONCILE {args.action_id}"
+                if input(f"External effect MUST be checked first. Type '{phrase}' to confirm: ") != phrase:
+                    raise PermissionError("reconciliation_confirmation_mismatch")
+                result = {"accepted": client.reconcile_incident(args.action_id, "", args.reference,
+                          "I_HAVE_RECONCILED_THE_EXTERNAL_EFFECT")}
             elif args.operation in ("approve", "reject"):
                 if not sys.stdin.isatty():
                     raise PermissionError("interactive_terminal_required_for_decisions")

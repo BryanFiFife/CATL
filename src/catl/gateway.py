@@ -5,6 +5,7 @@ Consciously limited to one backend process and serial requests in this first rel
 from __future__ import annotations
 import json
 import queue
+import secrets
 import subprocess
 import sys
 import threading
@@ -221,7 +222,7 @@ class Gateway:
             return
         response = self.backend.request("initialize", {
             "protocolVersion": "2025-11-25",
-            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.8.0rc1"}})
+            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.9.0rc1"}})
         if "error" in response or not isinstance(response.get("result"), dict):
             raise RuntimeError("backend_initialization_failed")
         self.backend.notify("notifications/initialized")
@@ -234,6 +235,9 @@ class Gateway:
         controls = self.state.controls()  # signature-verified; missing/corrupt => no dispatch
         if not controls["gateway_enabled"] or not controls["audit_enabled"]:
             return []
+        # A signed unresolved dispatch or ambiguous outcome MUST NOT be
+        # retried simply because the client asked again or the broker restarted.
+        quarantined = {item["tool"] for item in self.state.open_incidents()}
         self._ensure_backend()
         seen: set[str] = set()
         cursors: set[str] = set()
@@ -254,7 +258,8 @@ class Gateway:
                 seen.add(tool["name"])
                 if len(seen) > 256:
                     raise ValueError("catalogue_too_large")
-                if self.policy.pinned(tool) and tool["name"] not in controls["disabled_tools"]:
+                if (self.policy.pinned(tool) and tool["name"] not in controls["disabled_tools"]
+                        and tool["name"] not in quarantined):
                     self.available[tool["name"]] = tool
             cursor = result.get("nextCursor")
             if cursor is None or cursor == "":
@@ -302,7 +307,7 @@ class Gateway:
             return {"jsonrpc": "2.0", "id": id_, "result": {
                 "protocolVersion": "2025-11-25",
                 "capabilities": {"tools": {"listChanged": False}},
-                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.8.0rc1"}}}
+                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.9.0rc1"}}}
         if method == "tools/list":
             try:
                 result = {"jsonrpc": "2.0", "id": id_, "result": {"tools": self._refresh()}}
@@ -316,10 +321,14 @@ class Gateway:
             return modernize(response) if era == "modern" else response
         return error(id_, "method_not_allowed", -32601)
 
-    def _record(self, tool: str, binding: str | None, decision: str, outcome: str) -> None:
-        self.state.append({"at": int(time.time()), "agent_id": self.policy.agent_id,
-                           "tool": tool, "binding": binding, "policy_hash": self.policy.source_hash,
-                           "decision": decision, "outcome": outcome})
+    def _record(self, tool: str, binding: str | None, decision: str, outcome: str,
+                *, action_id: str | None = None) -> None:
+        event = {"at": int(time.time()), "agent_id": self.policy.agent_id,
+                 "tool": tool, "binding": binding, "policy_hash": self.policy.source_hash,
+                 "decision": decision, "outcome": outcome}
+        if action_id is not None:
+            event["action_id"] = action_id
+        self.state.append(event)
 
     def _tool_call(self, id_: Any, params: dict[str, Any]) -> dict[str, Any]:
         name, args = params.get("name"), params.get("arguments", {})
@@ -340,6 +349,9 @@ class Gateway:
             if name in controls["disabled_tools"]:
                 self._record(name, binding, "deny", "operator_disabled_tool")
                 return error(id_, "tool_disabled_by_operator")
+            if any(item["tool"] == name for item in self.state.open_incidents()):
+                self._record(name, binding, "deny", "unreconciled_effect_quarantine")
+                return error(id_, "tool_quarantined_pending_reconciliation")
             if name not in {t["name"] for t in self._refresh()}:
                 self._record(name, binding, "deny", "tool_unavailable_or_pin_mismatch")
                 return error(id_, "tool_not_pinned_or_unavailable")
@@ -380,19 +392,21 @@ class Gateway:
             if not self.state.acquire_rate(self.policy.agent_id, name, self.policy.rate_limits.get(name, 60)):
                 self._record(name, binding, "deny", "rate_limit_exceeded")
                 return error(id_, "rate_limit_exceeded")
-            # Intent is persisted BEFORE the backend can make an external change.
-            self._record(name, binding, effect, "dispatch_intent")
+            # Unique dispatch identity persists BEFORE possible side effects.
+            # A crash after this point leaves an auditable, quarantined action.
+            action_id = secrets.token_hex(16)
+            self._record(name, binding, effect, "dispatch_intent", action_id=action_id)
             try:
                 reply = self.backend.request("tools/call", {"name": name, "arguments": args})
             except (RuntimeError, TimeoutError, ValueError, OSError) as exc:
-                self._record(name, binding, effect, f"transport_failure:{type(exc).__name__}")
+                self._record(name, binding, effect, f"transport_failure:{type(exc).__name__}", action_id=action_id)
                 return error(id_, "tool_transport_failure")
             try:
                 reply_kind, payload = checked_tool_reply(reply, tool=self.available[name])
             except ValueError:
                 # The side effect may already have happened. Do not present a
                 # malformed reply as success; leave explicit uncertain evidence.
-                self._record(name, binding, effect, "invalid_backend_result_side_effect_possible")
+                self._record(name, binding, effect, "invalid_backend_result_side_effect_possible", action_id=action_id)
                 return error(id_, "backend_result_unverified_side_effect_possible")
             if reply_kind == "rpc_error":
                 outcome = "backend_rpc_error"
@@ -409,14 +423,20 @@ class Gateway:
                 self.state.append({"at": int(time.time()), "agent_id": self.policy.agent_id,
                     "tool": name, "binding": binding, "decision": effect,
                     "policy_hash": self.policy.source_hash, "outcome": "postcondition_checked",
-                    "verification": verified})
+                    "action_id": action_id, "verification": verified})
                 if not verified["verified"]:
-                    self._record(name, binding, effect, "postcondition_failed_side_effect_possible")
+                    self._record(name, binding, effect, "postcondition_failed_side_effect_possible", action_id=action_id)
                     return error(id_, "postcondition_failed_side_effect_possible")
-            self._record(name, binding, effect, outcome)
+            self._record(name, binding, effect, outcome, action_id=action_id)
             return result
         except (RuntimeError, TimeoutError, ValueError, OSError) as exc:
-            self._record(name, binding, "deny", f"preflight_failure:{type(exc).__name__}")
+            # Do not attempt an impossible audit append on a corrupt or
+            # rolled-back ledger and then let that secondary failure leak.
+            # No protected tool is dispatched when the integrity check fails.
+            try:
+                self._record(name, binding, "deny", f"preflight_failure:{type(exc).__name__}")
+            except (RuntimeError, TimeoutError, ValueError, OSError):
+                pass
             return error(id_, "preflight_failed")
 
 
