@@ -6,7 +6,7 @@
 **Local-first · Harness-independent · Default-deny · Human-controlled**
 
 ![Release](https://img.shields.io/badge/release-v0.11.0rc1-7c3aed?style=for-the-badge)
-![Tests](https://img.shields.io/badge/local_tests-276_passed-16a34a?style=for-the-badge)
+![Tests](https://img.shields.io/badge/CI_tests-283_cases_14_headless_skips-16a34a?style=for-the-badge)
 ![Broker](https://img.shields.io/badge/Linux_broker-rootless_UID_auth-087f8c?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-tool_subset-2563eb?style=for-the-badge)
 ![Security](https://img.shields.io/badge/default-DENY-dc2626?style=for-the-badge)
@@ -55,6 +55,8 @@ A protected Linux broker now **requires a reviewed Ed25519 operator public key**
 A red-team regression also reproduced a v0.10 **Pause/dispatch race**. Operator control writes and signed dispatch intents now have a definite ordering; after Pause has returned success no new dispatch intent can be approved under the old state. A tool with a prior recorded intent remains potentially in flight and might still produce external effects. The operator overlay remains responsive during backend execution.
 
 > 🛑 **Live protected service:** no `--operator-public-key` means startup is refused unless `--allow-uid-only-operator` is explicitly specified. Never rely on that unsafe switch for production.
+
+🧭 **Hermes Agent evaluation:** [Isolated Linux integration, stdio smoke checks and operator control runbook](docs/HERMES_EVALUATION.md).
 
 📘 [Operator signing and trust boundary](docs/OPERATOR_SIGNING_V011.md) · [Internal red-team reproduction](docs/RED_TEAM_ASSESSMENT_V011.md) · [Release notes](docs/RELEASE_NOTES_V011.md)
 

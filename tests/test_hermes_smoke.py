@@ -31,6 +31,17 @@ class HermesSmokeValidationTests(unittest.TestCase):
             {"error": {"message": "human_approval_required"}}),
             tool="write_demo", expect="approval-required")["passed"])
 
+    def test_error_text_must_not_pass_as_success(self):
+        with self.assertRaises(AssertionError):
+            validate_replies(sample(
+                {"result": {"isError": True,
+                            "content": [{"type": "text", "text": "failed"}]}}),
+                tool="echo_safe", expect="armed")
+        with self.assertRaises(AssertionError):
+            validate_replies(sample(
+                {"result": {"content": [{"type": "text", "text": "wrong echo"}]}}),
+                tool="echo_safe", expect="armed", expected_text="hello")
+
     def test_missing_tool_and_handshake_rejected(self):
         with self.assertRaises(AssertionError):
             validate_replies(sample({"result": {}}), tool="unreviewed", expect="armed")

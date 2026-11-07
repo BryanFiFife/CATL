@@ -13,7 +13,7 @@ import subprocess
 import sys
 
 
-def validate_replies(replies: list[dict], *, tool: str, expect: str) -> dict:
+def validate_replies(replies: list[dict], *, tool: str, expect: str, expected_text: str | None = None) -> dict:
     """Validate a real initialize/list/call exchange without trusting CLI exit alone."""
     if len(replies) != 3 or any(not isinstance(r, dict) for r in replies):
         raise AssertionError("three_MCP_replies_required")
@@ -36,11 +36,16 @@ def validate_replies(replies: list[dict], *, tool: str, expect: str) -> dict:
         if call.get("error", {}).get("message") != "human_approval_required":
             raise AssertionError("approval_barrier_not_enforced")
     elif expect == "armed":
-        blocks = call.get("result", {}).get("content", [])
+        result = call.get("result")
+        if not isinstance(result, dict) or result.get("isError") is True or "error" in call:
+            raise AssertionError("armed_tool_returned_an_error")
+        blocks = result.get("content", [])
         if not isinstance(blocks, list) or not any(
-            isinstance(b, dict) and b.get("type") == "text" for b in blocks
+            isinstance(b, dict) and b.get("type") == "text"
+            and (expected_text is None or b.get("text") == expected_text)
+            for b in blocks
         ):
-            raise AssertionError("armed_tool_did_not_return_text_result")
+            raise AssertionError("armed_tool_did_not_return_expected_text")
     else:
         raise ValueError("invalid_smoke_mode")
     return {"passed": True, "mode": expect, "tool": tool,
@@ -74,8 +79,10 @@ def main(argv: list[str] | None = None) -> int:
     if process.returncode:
         raise RuntimeError("CATL_shim_failure:" + process.stderr[-500:])
     replies = [json.loads(line) for line in process.stdout.splitlines() if line.strip()]
-    print(json.dumps(validate_replies(replies, tool=args.tool, expect=args.expect),
-                     sort_keys=True))
+    print(json.dumps(validate_replies(
+        replies, tool=args.tool, expect=args.expect,
+        expected_text=args.message if args.tool == "echo_safe" and args.expect == "armed" else None
+    ), sort_keys=True))
     return 0
 
 

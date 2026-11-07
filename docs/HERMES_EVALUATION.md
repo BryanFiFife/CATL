@@ -51,7 +51,17 @@ sudo systemd-tmpfiles --create /etc/tmpfiles.d/catl.conf
 
 **Log out and back in** to acquire your operator IPC group. Run `id`, `id catl-agent`, `id catl-broker`, `id catl-tools`, `stat`, and `namei -l` to check the expected ownership. The tmpfiles entry re-creates socket *directories* on boot; broker/backend services create their own sockets.
 
-Install a trusted, root-owned CATL virtual environment from the reviewed source. Keep the root-owned installation and demo backend code immutable to the agent; e.g., copy the reviewed source into `/opt/catl-src` **without your .git credentials**, create a root-owned virtualenv `/opt/catl-venv`, install the reviewed package there, and make `/opt/catl-src/examples/mock_server.py` accessible for reading to the backend account. The service templates below assume these two paths. Do not let Hermes modify installed code.
+Install a trusted, root-owned CATL virtual environment from the reviewed source. Only copy the reviewed evaluation backend and smoke script, **not .git or private credentials**:
+
+```bash
+sudo python3 -m venv /opt/catl-venv
+sudo /opt/catl-venv/bin/python -m pip install .
+sudo install -d -m 0755 -o root -g root /opt/catl-src/examples /opt/catl-src/tools
+sudo install -m 0644 -o root -g root examples/mock_server.py /opt/catl-src/examples/mock_server.py
+sudo install -m 0644 -o root -g root tools/hermes_mcp_smoke.py /opt/catl-src/tools/hermes_mcp_smoke.py
+```
+
+The service templates below assume these paths. Verify that `/opt/catl-venv` and `/opt/catl-src` cannot be modified by `catl-agent` or `catl-tools`. Never let Hermes modify installed CATL code.
 
 ## 3. Operator signing and reviewed demo policy
 
