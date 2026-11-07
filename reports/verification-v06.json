@@ -1,5 +1,7 @@
 {
-  "GitHub_actions": "not_verified",
+  "GitHub_actions": "passed: 8/8 scoped jobs at 62547af399a4c4191a949616ff7431eb5d236015",
+  "GitHub_actions_run_url": "https://github.com/BryanFiFife/CATL/actions/runs/42327737185",
+  "GitHub_actions_windows_security": "unsupported; Windows jobs validate portable policy, static code and fail-closed rejection only",
   "MCP_conformance": "restricted tools subset, no complete SDK certification",
   "backend_evidence": "rootless 4-UID integration, scripted; not production host sandbox attestation",
   "ci_scope": "Full regressions: Linux and macOS; Windows policy/static/fail-closed portability only",

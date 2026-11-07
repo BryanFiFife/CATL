@@ -14,7 +14,7 @@ The scope of this candidate is a **local, rootless Linux MCP tool gateway** with
 | A6 — File path scope | Local PASS | `path_within` segment-aware lexical rule avoids sibling-prefix bypass; OS symlink controls still required |
 | A7 — Rootless host hardening | NOT ATTESTED | systemd sandbox, SELinux/AppArmor, filesystem ACL and egress must be independently checked on each deployment |
 | A8 — Windows/macOS security boundary | FAIL / unavailable | No Windows AppContainer/job/ACL solution or verified macOS identity broker |
-| A9 — CI | PENDING FINAL RUN | Full regression jobs on Linux/macOS; Windows is a separate limited portability/fail-closed smoke test, NOT a protected Windows broker. |
+| A9 — Scoped CI | PASS | [8/8 GitHub jobs](https://github.com/BryanFiFife/CATL/actions/runs/42327737185) passed at `62547af399a4`: full tests Linux/macOS; Windows only policy/static/fail-closed portability. **Not** Windows protected broker support. |
 | A10 — External action reconciliation | NOT IMPLEMENTED | No independent read-after-write for email, API, payments, refunds or device control |
 | A11 — Independent penetration test | NOT PERFORMED | Third-party assessment required for consequential actions |
 | A12 — Supply chain / signed provenance | PARTIAL | Per-file SHA-256 source manifest and local wheel install; no Sigstore attestation or signed release |

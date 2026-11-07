@@ -10,6 +10,7 @@
 ![Broker](https://img.shields.io/badge/Linux_broker-rootless_UID_auth-087f8c?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-tool_subset-2563eb?style=for-the-badge)
 ![Security](https://img.shields.io/badge/default-DENY-dc2626?style=for-the-badge)
+[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.6.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)
 ![Offline](https://img.shields.io/badge/offline-first-0f766e)
@@ -50,7 +51,7 @@ flowchart TD
 ## 🧪 Release candidate: v0.6.0rc1
 
 **Candidate status: not yet general availability.** Windows protected process isolation,
-independent pen testing, confirmed remote CI, full modern MCP conformance and remote
+independent pen testing, full Windows protected execution, full modern MCP conformance and remote
 side-effect verification remain unpassed release gates. See
 [release gates](docs/RELEASE_GATES_V06.md) and [security review](docs/SECURITY_AUDIT_V06.md).
 
@@ -138,9 +139,9 @@ xvfb-run -a env PYTHONPATH=src python -m unittest discover -s tests -q
 PYTHONPATH=src python tests/integration_rootless_e2e.py
 ```
 
-**Evidence:** 203 unit/regression tests passed locally under Linux / Python 3.13.5 with Xvfb, plus a real unprivileged four-UID broker ↔ backend ↔ agent ↔ operator exercise. The root test verified operator-channel denial, tool execution, one-use approval, audit validity and signing-key access denial. No independent penetration test or passing GitHub Actions matrix is claimed yet.
+**Evidence:** 203 unit/regression tests passed locally under Linux / Python 3.13.5 with Xvfb, plus a real unprivileged four-UID broker ↔ backend ↔ agent ↔ operator exercise. The root test verified operator-channel denial, tool execution, one-use approval, audit validity and signing-key access denial. GitHub CI [passed 8/8 scoped jobs](https://github.com/BryanFiFife/CATL/actions/runs/42327737185) on commit [`62547af399a4`](https://github.com/BryanFiFife/CATL/commit/62547af399a4c4191a949616ff7431eb5d236015); Windows ran portability/fail-closed tests **only**, not a protected broker. No independent penetration test has been performed.
 
-🧪 [v0.6.0rc1 audit](docs/SECURITY_AUDIT_V05.md) · 🐧 [Rootless deployment](docs/DEPLOY_ROOTLESS_LINUX.md) · 🗒️ [Release notes](docs/RELEASE_NOTES_V05.md) · 🔐 [Responsible disclosure](SECURITY.md)
+🧪 [v0.6.0rc1 audit](docs/SECURITY_AUDIT_V06.md) · 🐧 [Rootless deployment](docs/DEPLOY_ROOTLESS_LINUX.md) · 🗒️ [Release notes](docs/CHANGES_V06.md) · 🔐 [Responsible disclosure](SECURITY.md)
 
 ## 🪟 Windows and macOS
 
