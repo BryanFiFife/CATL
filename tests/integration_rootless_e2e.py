@@ -87,6 +87,7 @@ def main():
         print('SKIP: needs disposable Linux root test host and setpriv')
         return 77
     from catl.crypto import digest
+    from catl.operator_auth import generate_test_software_keypair
     from importlib.util import spec_from_file_location, module_from_spec
     spec=spec_from_file_location('mock',ROOT/'examples/mock_server.py'); mod=module_from_spec(spec);spec.loader.exec_module(mod)
     with tempfile.TemporaryDirectory(prefix='catl-rootless-') as td:
@@ -95,6 +96,13 @@ def main():
                 'rules':[{'tool':'echo_safe','effect':'allow','conditions':[]},
                          {'tool':'write_demo','effect':'approve','conditions':[]}]}
         config=root/'policy.json';config.write_text(json.dumps(policy));config.chmod(0o644)
+        signing_dir=root/'operator-keys';signing_dir.mkdir(mode=0o700)
+        signing_dir.chmod(0o700)
+        private_key=signing_dir/'operator-private.pem'
+        public_key=root/'broker-operator-public.hex'
+        generate_test_software_keypair(private_key,public_key)
+        os.chown(private_key,UID_OPERATOR,UID_OPERATOR)
+        os.chown(signing_dir,UID_OPERATOR,UID_OPERATOR)
         anchor=paths['anchor']/'head.json'
         backend_sock=paths['backend']/'tools.sock'
         agent_sock=paths['agent']/'agent.sock';op_sock=paths['operator']/'operator.sock'
@@ -114,11 +122,20 @@ def main():
                   '--state-dir',str(paths['state']), '--anchor-path',str(anchor),
                   '--agent-socket',str(agent_sock),'--operator-socket',str(op_sock),
                   '--agent-uid',str(UID_AGENT),'--operator-uid',str(UID_OPERATOR),
+                  '--operator-public-key',str(public_key),
                   '--agent-gid',str(G_AGENT),'--operator-gid',str(G_OPERATOR),
                   '--backend-socket',str(backend_sock),'--backend-uid',str(UID_BACKEND)])
             wait_socket(agent_sock, broker); wait_socket(op_sock,broker)
             def op(payload):
-                out=ipc(UID_OPERATOR,[G_OPERATOR],op_sock,payload)
+                # The real operator CLI signs one-time challenges; no software
+                # private key is readable by the broker, tool, or agent UID.
+                script = """import json,sys
+from catl.broker import OperatorClient
+from pathlib import Path
+client=OperatorClient(Path(sys.argv[1]),signing_key=Path(sys.argv[2]))
+print(json.dumps({'ok':True,'result':client._rpc(json.loads(sys.argv[3]))}))"""
+                out=run_as(UID_OPERATOR,[G_OPERATOR],
+                           [sys.executable,'-c',script,str(op_sock),str(private_key),json.dumps(payload)])
                 assert out.returncode==0,(out.stderr,out.stdout)
                 return json.loads(out.stdout)
             def call(name,message):
@@ -126,6 +143,9 @@ def main():
                                'params':{'name':name,'arguments':{'message':message}}})
                 assert out.returncode==0,(out.stderr,out.stdout)
                 return json.loads(out.stdout)
+            forged = ipc(UID_OPERATOR,[G_OPERATOR],op_sock,
+                {'op':'set_feature','feature':'gateway_enabled','enabled':True})
+            assert forged.returncode==0 and json.loads(forged.stdout)['ok'] is False, forged
             assert op({'op':'set_feature','feature':'gateway_enabled','enabled':True})['ok']
             allowed=call('echo_safe','hello rootless');assert allowed['result']['content'][0]['text']=='hello rootless',allowed
             pending=call('write_demo','safe test data');assert pending['error']['message']=='human_approval_required',pending
@@ -140,7 +160,7 @@ def main():
             assert op({'op':'verify'})['result']['valid']
             unpriv=run_as(UID_BACKEND,[G_BACKEND],[sys.executable,'-c','import pathlib,sys;pathlib.Path(sys.argv[1]).read_bytes()',str(paths['state']/'audit.key')])
             assert unpriv.returncode!=0,unpriv
-            print('PASS rootless Linux 4-UID E2E: tool call, approval/replay, audit, channel isolation, key denial', flush=True)
+            print('PASS rootless Linux 4-UID signed E2E: unsigned-forgery denial, tool call, approval/replay, audit, channel isolation, key denial', flush=True)
             return 0
         finally:
             # No communicate(): backend descendants might inherit a pipe and block EOF.

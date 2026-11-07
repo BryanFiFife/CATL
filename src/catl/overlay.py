@@ -307,12 +307,13 @@ class OperatorOverlay:
 
 def launch(state_dir: Path | None = None, config: Path | None = None, *,
            operator_socket: Path | None = None, direct_state: bool = False,
+           signing_key: Path | None = None,
            topmost: bool = True) -> int:
     import tkinter as tk
     if operator_socket is not None:
         from .broker import OperatorClient
         from types import SimpleNamespace
-        state = OperatorClient(operator_socket)
+        state = OperatorClient(operator_socket, signing_key=signing_key)
         # Tool names are retrieved from the authenticated broker rather than a
         # local config file which could be edited by the agent.
         policy = SimpleNamespace(tool_pins={name: "" for name in state.status()["tools"]})

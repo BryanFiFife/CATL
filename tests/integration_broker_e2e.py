@@ -29,7 +29,7 @@ with tempfile.TemporaryDirectory(prefix='catl-v04-e2e-') as d:
   assert bootstrap.returncode==0,(bootstrap.stdout,bootstrap.stderr)
   cmd=[sys.executable,'-m','catl.cli','broker','--config',str(policy),'--state-dir',str(state),'--anchor-path',str(anchor),
        '--agent-socket',str(agent_sock),'--operator-socket',str(op_sock),'--agent-uid',str(AGENT),'--operator-uid',str(OPERATOR),
-       '--backend-user','nobody','--pass-env','CATL_DEMO_OUTPUT','--',sys.executable,str(backend)]
+       '--allow-uid-only-operator','--backend-user','nobody','--pass-env','CATL_DEMO_OUTPUT','--',sys.executable,str(backend)]
   server=subprocess.Popen(cmd,env=ENV,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,start_new_session=True)
   try:
     for i in range(500):

@@ -5,6 +5,7 @@ legacy MCP 2025-11-25; HTTP, subscriptions and MRTR are intentionally excluded.
 """
 from __future__ import annotations
 from typing import Any
+from . import __version__
 
 MODERN = "2026-07-28"
 LEGACY = "2025-11-25"
@@ -12,7 +13,7 @@ VERSION_KEY = "io.modelcontextprotocol/protocolVersion"
 CAPABILITY_KEY = "io.modelcontextprotocol/clientCapabilities"
 CLIENT_INFO_KEY = "io.modelcontextprotocol/clientInfo"
 SERVER_INFO_KEY = "io.modelcontextprotocol/serverInfo"
-SERVER_INFO = {"name": "caledapt-agent-trust", "version": "0.10.0rc1"}
+SERVER_INFO = {"name": "caledapt-agent-trust", "version": __version__}
 
 
 def classify(msg: dict[str, Any]) -> str:
