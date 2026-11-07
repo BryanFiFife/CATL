@@ -53,9 +53,11 @@ def validate_structured_output(tool: dict[str, Any], result: dict[str, Any]) -> 
     _refs_local_only(schema)
     if result.get("isError") is True:
         return  # Error payloads have no obligation to match success schemas.
-    structured = result.get("structuredContent")
-    if not isinstance(structured, dict):
+    if "structuredContent" not in result:
         raise ValueError("tool_structured_content_missing")
+    # MCP outputSchema permits ANY JSON instance, including lists and scalars.
+    # The schema validator decides whether that type is authorised.
+    structured = result["structuredContent"]
     def refuse_remote(uri: str):
         raise ValueError("remote_schema_loading_denied")
     try:

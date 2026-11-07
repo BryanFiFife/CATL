@@ -18,6 +18,11 @@ class TestStaticSecurity(unittest.TestCase):
                             continue  # audited AF_UNIX-only local IPC, no TCP/IP endpoints
                         self.assertNotIn(part.name.split(".")[0],NETWORK_IMPORTS,f"{file.name}:{item.lineno}")
                 if isinstance(item, ast.ImportFrom) and item.module:
+                    # urllib.parse.urlsplit is a pure parser; urllib.request,
+                    # urllib.error and every other network-capable submodule
+                    # remain forbidden. This exception cannot open sockets.
+                    if item.module == "urllib.parse" and {n.name for n in item.names} == {"urlsplit"}:
+                        continue
                     self.assertNotIn(item.module.split(".")[0],NETWORK_IMPORTS,f"{file.name}:{item.lineno}")
     def test_broker_is_local_unix_only(self):
         for file in ("broker.py", "external_backend.py"):
