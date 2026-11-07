@@ -1,0 +1,12 @@
+{
+  "version": "0.5.0",
+  "release_date": "2026-11-07",
+  "stage": "private engineering evaluation",
+  "tested_platform": "Linux / Python 3.13.5",
+  "tests_passed": 179,
+  "integration": "rootless four-UID local E2E PASS",
+  "cross_platform_ci": "configured; results not confirmed",
+  "windows_protected_broker": "not implemented",
+  "external_penetration_test": "not performed",
+  "scope": "local functional and adversarial tests, not formal backdoor-free certification"
+}

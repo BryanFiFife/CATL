@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "caledapt-agent-trust"
+version = "0.5.0"
+description = "Local-first MCP tool gateway with non-root Linux identity broker, protected operator IPC, external tool-service socket and anchored evidence"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Proprietary - evaluation only; see LICENSE"}
+authors = [{name = "Caledapt"}]
+dependencies = ["jsonschema==4.26.0"]
+
+[project.scripts]
+catl = "catl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

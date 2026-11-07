@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="850" height="570" viewBox="0 0 850 570" role="img" aria-label="Illustrative Caledapt Agent Trust Layer operator overlay with security toggles, tool switches and approval queue">
+<title>CATL Operator Overlay — illustrative controls</title>
+<rect width="850" height="570" rx="18" fill="#0b1118"/>
+<rect x="13" y="13" width="824" height="544" rx="11" fill="#101923" stroke="#314354"/>
+<text x="39" y="56" fill="#41edbd" font-size="28" font-family="Arial,sans-serif" font-weight="bold">◉ CALEDAPT</text>
+<text x="40" y="84" fill="#41edbd" font-family="Arial,sans-serif" font-size="15">● ARMED — permitted calls may execute</text>
+<rect x="686" y="26" width="55" height="35" rx="4" fill="#263748"/>
+<text x="708" y="50" fill="white" font-size="17">▤</text>
+<rect x="751" y="26" width="55" height="35" rx="4" fill="#263748"/>
+<text x="773" y="50" fill="white" font-size="19">−</text>
+<rect x="41" y="105" width="359" height="49" rx="5" fill="#793e50"/>
+<text x="115" y="137" fill="white" font-size="20" font-family="Arial,sans-serif">⛔ PAUSE AGENTS</text>
+<rect x="415" y="105" width="395" height="49" rx="5" fill="#196457"/>
+<text x="546" y="137" fill="white" font-size="20" font-family="Arial,sans-serif">▶ RESUME</text>
+<text x="41" y="191" fill="#9fb1c3" font-family="Arial,sans-serif" font-size="15" font-weight="bold">SECURITY FEATURES</text>
+<rect x="41" y="202" width="375" height="218" rx="4" fill="#162331"/>
+<g font-family="Arial,sans-serif" font-size="17" fill="#f1f5f9"><text x="62" y="235">☑ 🛡 Gateway execution</text><text x="62" y="283">☑ ✋ Human approvals</text><text x="62" y="331">☑ 🔎 File verification</text><text x="62" y="379">☑ 🧾 Audit evidence</text></g>
+<g font-family="Arial,sans-serif" font-size="12" fill="#9fb1c3"><text x="101" y="251">OFF blocks all new tool calls</text><text x="101" y="299">OFF blocks approval-required actions</text><text x="101" y="347">OFF blocks verifiable tool actions</text><text x="101" y="395">OFF blocks all new tool calls</text></g>
+<text x="444" y="191" fill="#9fb1c3" font-family="Arial,sans-serif" font-size="15" font-weight="bold">PER-TOOL CONTROLS</text>
+<rect x="437" y="202" width="373" height="156" rx="4" fill="#162331"/>
+<g font-family="monospace" font-size="16" fill="#f1f5f9"><text x="454" y="235">☑  browser.read</text><text x="454" y="269">☑  calendar.read</text><text x="454" y="303">☑  email.draft</text><text x="454" y="337">☐  payments.send</text></g>
+<rect x="437" y="367" width="180" height="42" rx="4" fill="#263748"/>
+<text x="451" y="393" fill="white" font-family="Arial,sans-serif" font-size="14">Disable all tools</text>
+<rect x="627" y="367" width="183" height="42" rx="4" fill="#263748"/>
+<text x="640" y="393" fill="white" font-family="Arial,sans-serif" font-size="14">Enable pinned tools</text>
+<text x="41" y="450" fill="#9fb1c3" font-family="Arial,sans-serif" font-size="15" font-weight="bold">HUMAN APPROVAL QUEUE</text>
+<rect x="41" y="461" width="769" height="72" rx="5" fill="#162331"/>
+<text x="58" y="490" fill="#f1f5f9" font-family="monospace" font-size="16">email.send   ·   pending exact-argument review</text>
+<text x="58" y="516" fill="#9fb1c3" font-family="Arial,sans-serif" font-size="13">Approve or reject only after checking the full tool call.</text>
+</svg>

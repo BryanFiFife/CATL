@@ -1,0 +1,198 @@
+test_anchor_missing_refuses_all_calls (test_broker_anchor.TestAnchor.test_anchor_missing_refuses_all_calls) ... ok
+test_anchor_tampering_detected (test_broker_anchor.TestAnchor.test_anchor_tampering_detected) ... ok
+test_approval_request_and_decision_update_checkpoint (test_broker_anchor.TestAnchor.test_approval_request_and_decision_update_checkpoint) ... ok
+test_concurrent_control_updates_dont_lose_anchor (test_broker_anchor.TestAnchor.test_concurrent_control_updates_dont_lose_anchor) ... ok
+test_external_anchor_bootstrap_is_exclusive (test_broker_anchor.TestAnchor.test_external_anchor_bootstrap_is_exclusive) ... ok
+test_key_mismatch_fails_closed (test_broker_anchor.TestAnchor.test_key_mismatch_fails_closed) ... ok
+test_new_anchor_verified_and_advances (test_broker_anchor.TestAnchor.test_new_anchor_verified_and_advances) ... ok
+test_old_pending_approval_cannot_be_approved_twice (test_broker_anchor.TestAnchor.test_old_pending_approval_cannot_be_approved_twice) ... ok
+test_old_signed_approval_replay_rejected (test_broker_anchor.TestAnchor.test_old_signed_approval_replay_rejected) ... ok
+test_older_valid_signed_control_snapshot_detected (test_broker_anchor.TestAnchor.test_older_valid_signed_control_snapshot_detected) ... ok
+test_truncated_receipt_chain_detected (test_broker_anchor.TestAnchor.test_truncated_receipt_chain_detected) ... ok
+test_valid_database_snapshot_rollback_detected (test_broker_anchor.TestAnchor.test_valid_database_snapshot_rollback_detected) ... ok
+test_agent_cannot_read_supervisor_key (test_broker_anchor.TestBrokerIdentity.test_agent_cannot_read_supervisor_key) ... ok
+test_agent_cannot_use_operator_channel (test_broker_anchor.TestBrokerIdentity.test_agent_cannot_use_operator_channel) ... ok
+test_operator_cannot_use_agent_channel (test_broker_anchor.TestBrokerIdentity.test_operator_cannot_use_agent_channel) ... ok
+test_operator_enable_agent_call_and_approval (test_broker_anchor.TestBrokerIdentity.test_operator_enable_agent_call_and_approval) ... ok
+test_untrusted_uid_cannot_connect_to_either_socket (test_broker_anchor.TestBrokerIdentity.test_untrusted_uid_cannot_connect_to_either_socket) ... ok
+test_approval_decision_mac_tamper_blocked (test_controls_overlay.TestControls.test_approval_decision_mac_tamper_blocked) ... ok
+test_approval_off_even_with_prior_approval (test_controls_overlay.TestControls.test_approval_off_even_with_prior_approval) ... ok
+test_approval_off_never_falls_back_to_allow (test_controls_overlay.TestControls.test_approval_off_never_falls_back_to_allow) ... ok
+test_approval_record_forgery_blocked (test_controls_overlay.TestControls.test_approval_record_forgery_blocked) ... ok
+test_approval_request_arg_tamper_blocked (test_controls_overlay.TestControls.test_approval_request_arg_tamper_blocked) ... ok
+test_audit_contains_operator_control_event (test_controls_overlay.TestControls.test_audit_contains_operator_control_event) ... ok
+test_audit_off_blocks_new_tool_calls (test_controls_overlay.TestControls.test_audit_off_blocks_new_tool_calls) ... ok
+test_control_signature_change_fails_closed (test_controls_overlay.TestControls.test_control_signature_change_fails_closed) ... ok
+test_database_control_body_tamper_fails_closed (test_controls_overlay.TestControls.test_database_control_body_tamper_fails_closed) ... ok
+test_defaults_are_explicit_and_signed (test_controls_overlay.TestControls.test_defaults_are_explicit_and_signed) ... ok
+test_deleted_controls_fail_closed_not_reset_to_allow (test_controls_overlay.TestControls.test_deleted_controls_fail_closed_not_reset_to_allow) ... ok
+test_disabled_tool_even_with_prior_approval (test_controls_overlay.TestControls.test_disabled_tool_even_with_prior_approval) ... ok
+test_feature_fields_rejected (test_controls_overlay.TestControls.test_feature_fields_rejected) ... ok
+test_legacy_initialized_forwarded_after_initialize (test_controls_overlay.TestControls.test_legacy_initialized_forwarded_after_initialize) ... ok
+test_modern_tool_list_zero_cache (test_controls_overlay.TestControls.test_modern_tool_list_zero_cache) ... ok
+test_pause_denies_execution_and_hides_tools (test_controls_overlay.TestControls.test_pause_denies_execution_and_hides_tools) ... ok
+test_resume_allows_only_pinned_policy (test_controls_overlay.TestControls.test_resume_allows_only_pinned_policy) ... ok
+test_securely_disabled_audit_is_not_unlogged_execution (test_controls_overlay.TestControls.test_securely_disabled_audit_is_not_unlogged_execution) ... ok
+test_tool_off_blocks_and_hides (test_controls_overlay.TestControls.test_tool_off_blocks_and_hides) ... ok
+test_unpinned_cannot_be_enabled (test_controls_overlay.TestControls.test_unpinned_cannot_be_enabled) ... ok
+test_tk_overlay_constructs_minimises_and_controls_live_gateway (test_controls_overlay.TestGUI.test_tk_overlay_constructs_minimises_and_controls_live_gateway) ... <frozen importlib._bootstrap_external>:784: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f7329b17c40>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<frozen importlib._bootstrap_external>:784: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f7329b17e20>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<frozen importlib._bootstrap_external>:784: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f7329b17d30>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<frozen importlib._bootstrap_external>:784: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f7329b17f10>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<frozen importlib._bootstrap_external>:784: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f73299e8a90>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<frozen importlib._bootstrap_external>:784: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f73299e8310>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<frozen importlib._bootstrap_external>:784: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f73299e8400>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_exact_limit_and_explicit_reset (test_controls_overlay.TestRateLimits.test_exact_limit_and_explicit_reset) ... ok
+test_existing_database_migration_defaults_paused (test_controls_overlay.TestRateLimits.test_existing_database_migration_defaults_paused) ... ok
+test_gateway_rate_bound_blocks_dispatch (test_controls_overlay.TestRateLimits.test_gateway_rate_bound_blocks_dispatch) ... ok
+test_new_database_defaults_disarmed (test_controls_overlay.TestRateLimits.test_new_database_defaults_disarmed) ... ok
+test_removed_database_does_not_auto_rearm (test_controls_overlay.TestRateLimits.test_removed_database_does_not_auto_rearm) ... ok
+test_external_schema_refs_denied_before_resolution (test_controls_overlay.TestSchemaSecurity.test_external_schema_refs_denied_before_resolution) ... ok
+test_local_schema_reference_supported (test_controls_overlay.TestSchemaSecurity.test_local_schema_reference_supported) ... ok
+test_multiple_tool_switch_atomic (test_controls_overlay.TestSchemaSecurity.test_multiple_tool_switch_atomic) ... ok
+test_required_field_missing_denied (test_controls_overlay.TestSchemaSecurity.test_required_field_missing_denied) ... ok
+test_schema_disallowed_recursion_depth (test_controls_overlay.TestSchemaSecurity.test_schema_disallowed_recursion_depth) ... ok
+test_child_stderr_cannot_spoof_operator_terminal (test_controls_overlay.TestSubprocessHardening.test_child_stderr_cannot_spoof_operator_terminal) ... ok
+test_child_that_never_reads_stdin_cannot_hang_gateway_forever (test_controls_overlay.TestSubprocessHardening.test_child_that_never_reads_stdin_cannot_hang_gateway_forever) ... ok
+test_subprocess_real_stdio_and_approval_persistence (test_gateway.TestEndToEnd.test_subprocess_real_stdio_and_approval_persistence) ... ok
+test_approval_arg_change_denied (test_gateway.TestGateway.test_approval_arg_change_denied) ... ok
+test_approval_first_blocked (test_gateway.TestGateway.test_approval_first_blocked) ... ok
+test_approval_policy_change_denied (test_gateway.TestGateway.test_approval_policy_change_denied) ... ok
+test_approval_replay_denied (test_gateway.TestGateway.test_approval_replay_denied) ... ok
+test_backend_error_recorded (test_gateway.TestGateway.test_backend_error_recorded) ... ok
+test_block_prompt_method (test_gateway.TestGateway.test_block_prompt_method) ... ok
+test_block_resource_method (test_gateway.TestGateway.test_block_resource_method) ... ok
+test_catalogue_pagination_fails_closed (test_gateway.TestGateway.test_catalogue_pagination_fails_closed) ... ok
+test_catalogue_timeout_fails_closed (test_gateway.TestGateway.test_catalogue_timeout_fails_closed) ... ok
+test_changed_schema_blocked (test_gateway.TestGateway.test_changed_schema_blocked) ... ok
+test_changed_tool_definition_blocked (test_gateway.TestGateway.test_changed_tool_definition_blocked) ... ok
+test_initialize_hides_other_capabilities (test_gateway.TestGateway.test_initialize_hides_other_capabilities) ... ok
+test_initialized_notification_forwarded (test_gateway.TestGateway.test_initialized_notification_forwarded) ... ok
+test_invalid_request_id (test_gateway.TestGateway.test_invalid_request_id) ... ok
+test_list_only_pinned (test_gateway.TestGateway.test_list_only_pinned) ... ok
+test_no_approval_for_bad_structure (test_gateway.TestGateway.test_no_approval_for_bad_structure) ... ok
+test_other_notifications_not_forwarded (test_gateway.TestGateway.test_other_notifications_not_forwarded) ... ok
+test_too_large_arguments (test_gateway.TestGateway.test_too_large_arguments) ... ok
+test_tool_allow (test_gateway.TestGateway.test_tool_allow) ... ok
+test_tool_denied (test_gateway.TestGateway.test_tool_denied) ... ok
+test_tool_duplicate_names_blocks_catalogue (test_gateway.TestGateway.test_tool_duplicate_names_blocks_catalogue) ... ok
+test_unknown_method_default_deny (test_gateway.TestGateway.test_unknown_method_default_deny) ... ok
+test_unpinned_rejected (test_gateway.TestGateway.test_unpinned_rejected) ... ok
+test_clean_environment_drops_unexpected_secret (test_hardening.IsolationTests.test_clean_environment_drops_unexpected_secret) ... ok
+test_default_requires_isolation (test_hardening.IsolationTests.test_default_requires_isolation) ... ok
+test_demo_override_explicit (test_hardening.IsolationTests.test_demo_override_explicit) ... ok
+test_invalid_env_name_rejected (test_hardening.IsolationTests.test_invalid_env_name_rejected) ... ok
+test_root_is_not_a_backend_identity (test_hardening.IsolationTests.test_root_is_not_a_backend_identity) ... ok
+test_self_identity_cannot_be_backend (test_hardening.IsolationTests.test_self_identity_cannot_be_backend) ... ok
+test_subprocess_rejected_without_explicit_override (test_hardening.IsolationTests.test_subprocess_rejected_without_explicit_override) ... ok
+test_bad_identity_fails (test_hardening.ModernTests.test_bad_identity_fails) ... ok
+test_legacy_still_works (test_hardening.ModernTests.test_legacy_still_works) ... ok
+test_malformed_backend_result_denied (test_hardening.ModernTests.test_malformed_backend_result_denied) ... ok
+test_malformed_result_meta_blocked (test_hardening.ModernTests.test_malformed_result_meta_blocked) ... ok
+test_missing_capabilities_fails (test_hardening.ModernTests.test_missing_capabilities_fails) ... ok
+test_modern_cannot_initialize_or_ping (test_hardening.ModernTests.test_modern_cannot_initialize_or_ping) ... ok
+test_modern_denied (test_hardening.ModernTests.test_modern_denied) ... ok
+test_modern_direct_call (test_hardening.ModernTests.test_modern_direct_call) ... ok
+test_modern_discovery_result_complete_and_server_identity (test_hardening.ModernTests.test_modern_discovery_result_complete_and_server_identity) ... ok
+test_modern_list_autoinitializes_legacy_backend (test_hardening.ModernTests.test_modern_list_autoinitializes_legacy_backend) ... ok
+test_modern_mrtr_retry_fails_closed (test_hardening.ModernTests.test_modern_mrtr_retry_fails_closed) ... ok
+test_pagination_duplicate_across_pages_blocked (test_hardening.ModernTests.test_pagination_duplicate_across_pages_blocked) ... ok
+test_pagination_repeated_cursor_blocked (test_hardening.ModernTests.test_pagination_repeated_cursor_blocked) ... ok
+test_pagination_two_pages_and_stable_sorting (test_hardening.ModernTests.test_pagination_two_pages_and_stable_sorting) ... ok
+test_unexpected_result_kind_blocked (test_hardening.ModernTests.test_unexpected_result_kind_blocked) ... ok
+test_unsupported_revision_fails (test_hardening.ModernTests.test_unsupported_revision_fails) ... ok
+test_wrong_capabilities_type_fails (test_hardening.ModernTests.test_wrong_capabilities_type_fails) ... ok
+test_absolute_path_rejected (test_hardening.PostconditionTests.test_absolute_path_rejected) ... ok
+test_changed_backend_output_refused (test_hardening.PostconditionTests.test_changed_backend_output_refused) ... ok
+test_nonexistent_path_fails_postcondition (test_hardening.PostconditionTests.test_nonexistent_path_fails_postcondition) ... ok
+test_oversize_file_rejected (test_hardening.PostconditionTests.test_oversize_file_rejected) ... ok
+test_path_traversal_rejected (test_hardening.PostconditionTests.test_path_traversal_rejected) ... ok
+test_postcondition_policy_pinned_hash_changes (test_hardening.PostconditionTests.test_postcondition_policy_pinned_hash_changes) ... ok
+test_preflight_bad_digest_blocks_dispatch (test_hardening.PostconditionTests.test_preflight_bad_digest_blocks_dispatch) ... ok
+test_preflight_traversal_blocks_dispatch (test_hardening.PostconditionTests.test_preflight_traversal_blocks_dispatch) ... ok
+test_symlink_file_rejected (test_hardening.PostconditionTests.test_symlink_file_rejected) ... ok
+test_symlink_parent_rejected (test_hardening.PostconditionTests.test_symlink_parent_rejected) ... ok
+test_unknown_postcondition_tool_fails_load (test_hardening.PostconditionTests.test_unknown_postcondition_tool_fails_load) ... ok
+test_verified_real_file_sha (test_hardening.PostconditionTests.test_verified_real_file_sha) ... ok
+test_cli_rejects_unsandboxed_default (test_modern_stdio.TestModernStdio.test_cli_rejects_unsandboxed_default) ... ok
+test_discover_list_tool_call_and_refusal (test_modern_stdio.TestModernStdio.test_discover_list_tool_call_and_refusal) ... ok
+test_real_child_file_digest_and_approval (test_modern_stdio.TestRealPostcondition.test_real_child_file_digest_and_approval) ... ok
+test_minimize_collapse_expand (test_operator_overlay_rpc.TestBrokerOverlayWindow.test_minimize_collapse_expand) ... ok
+test_no_direct_state_or_hmac_key_owned_by_gui (test_operator_overlay_rpc.TestBrokerOverlayWindow.test_no_direct_state_or_hmac_key_owned_by_gui) ... ok
+test_toolbar_updates_broker_client (test_operator_overlay_rpc.TestBrokerOverlayWindow.test_toolbar_updates_broker_client) ... ok
+test_allow_not_implicit (test_policy.TestPolicy.test_allow_not_implicit) ... ok
+test_approval_small_amount (test_policy.TestPolicy.test_approval_small_amount) ... ok
+test_bad_boolean_not_number (test_policy.TestPolicy.test_bad_boolean_not_number) ... ok
+test_bad_wire_type (test_policy.TestPolicy.test_bad_wire_type) ... ok
+test_deny_dominates_approval (test_policy.TestPolicy.test_deny_dominates_approval) ... ok
+test_duplicate_json_key_rejected (test_policy.TestPolicy.test_duplicate_json_key_rejected) ... ok
+test_empty_conditions_can_allow_specific_tool (test_policy.TestPolicy.test_empty_conditions_can_allow_specific_tool) ... ok
+test_gte_prevents_negative_numbers (test_policy.TestPolicy.test_gte_prevents_negative_numbers) ... ok
+test_invalid_utf8 (test_policy.TestPolicy.test_invalid_utf8) ... ok
+test_json_pointer_escape (test_policy.TestPolicy.test_json_pointer_escape) ... ok
+test_key_creation_and_reuse (test_policy.TestPolicy.test_key_creation_and_reuse) ... ok
+test_key_symlink_rejected (test_policy.TestPolicy.test_key_symlink_rejected) ... ok
+test_message_size_cap (test_policy.TestPolicy.test_message_size_cap) ... ok
+test_missing_arg_denied (test_policy.TestPolicy.test_missing_arg_denied) ... ok
+test_negative_amount_not_implied_safe (test_policy.TestPolicy.test_negative_amount_not_implied_safe) ... ok
+test_non_finite_json_rejected_on_wire (test_policy.TestPolicy.test_non_finite_json_rejected_on_wire) ... ok
+test_one_of_type_strict (test_policy.TestPolicy.test_one_of_type_strict) ... ok
+test_pin_exact (test_policy.TestPolicy.test_pin_exact) ... ok
+test_pin_order_independent (test_policy.TestPolicy.test_pin_order_independent) ... ok
+test_rule_field_unknown_rejected (test_policy.TestPolicy.test_rule_field_unknown_rejected) ... ok
+test_unknown_config_rejected (test_policy.TestPolicy.test_unknown_config_rejected) ... ok
+test_unpinned_tool_denied (test_policy.TestPolicy.test_unpinned_tool_denied) ... ok
+test_weak_key_permissions_rejected (test_policy.TestPolicy.test_weak_key_permissions_rejected) ... ok
+test_wildcard_rules_rejected (test_policy.TestPolicy.test_wildcard_rules_rejected) ... ok
+test_backend_method_allowlist_exact (test_rootless_security.TestRootlessSecurity.test_backend_method_allowlist_exact) ... ok
+test_backend_parent_symlink_denied (test_rootless_security.TestRootlessSecurity.test_backend_parent_symlink_denied) ... ok
+test_backend_service_refuses_group_not_granted (test_rootless_security.TestRootlessSecurity.test_backend_service_refuses_group_not_granted) ... ok
+test_backend_service_refuses_privileged_uid (test_rootless_security.TestRootlessSecurity.test_backend_service_refuses_privileged_uid) ... ok
+test_backend_service_refuses_same_broker_identity (test_rootless_security.TestRootlessSecurity.test_backend_service_refuses_same_broker_identity) ... ok
+test_backend_service_refuses_world_writable_parent (test_rootless_security.TestRootlessSecurity.test_backend_service_refuses_world_writable_parent) ... ok
+test_backend_timeout_bounded (test_rootless_security.TestRootlessSecurity.test_backend_timeout_bounded) ... ok
+test_backend_uid_cannot_be_root (test_rootless_security.TestRootlessSecurity.test_backend_uid_cannot_be_root) ... ok
+test_distinct_backend_uid_required (test_rootless_security.TestRootlessSecurity.test_distinct_backend_uid_required) ... ok
+test_group_socket_cannot_change_owner (test_rootless_security.TestRootlessSecurity.test_group_socket_cannot_change_owner) ... ok
+test_group_socket_requires_membership (test_rootless_security.TestRootlessSecurity.test_group_socket_requires_membership) ... ok
+test_nonroot_backend_writes_no_supervisor_secrets (test_rootless_security.TestRootlessSecurity.test_nonroot_backend_writes_no_supervisor_secrets) ... ok
+test_preexisting_backend_path_is_rejected (test_rootless_security.TestRootlessSecurity.test_preexisting_backend_path_is_rejected) ... ok
+test_root_backend_service_cli_does_not_launch_tool (test_rootless_security.TestRootlessSecurity.test_root_backend_service_cli_does_not_launch_tool) ... ok
+test_unknown_backend_request_not_forwarded (test_rootless_security.TestRootlessSecurity.test_unknown_backend_request_not_forwarded) ... ok
+test_unknown_notifications_not_forwarded (test_rootless_security.TestRootlessSecurity.test_unknown_notifications_not_forwarded) ... ok
+test_broker_is_local_unix_only (test_static_security.TestStaticSecurity.test_broker_is_local_unix_only) ... ok
+test_no_eval_exec_or_shell_true (test_static_security.TestStaticSecurity.test_no_eval_exec_or_shell_true) ... ok
+test_no_network_client_or_server_imports_in_supervisor (test_static_security.TestStaticSecurity.test_no_network_client_or_server_imports_in_supervisor) ... ok
+test_approval_detail_bounded (test_store.TestState.test_approval_detail_bounded) ... ok
+test_approval_not_reusable_other_binding (test_store.TestState.test_approval_not_reusable_other_binding) ... ok
+test_approval_one_shot (test_store.TestState.test_approval_one_shot) ... ok
+test_approval_queue_bounded (test_store.TestState.test_approval_queue_bounded) ... ok
+test_approval_same_request_deduplicated (test_store.TestState.test_approval_same_request_deduplicated) ... ok
+test_approval_ttl_restricted (test_store.TestState.test_approval_ttl_restricted) ... ok
+test_body_tampering_detected (test_store.TestState.test_body_tampering_detected) ... ok
+test_chain_normal (test_store.TestState.test_chain_normal) ... ok
+test_concurrent_one_shot (test_store.TestState.test_concurrent_one_shot) ... ok
+test_concurrent_receipts (test_store.TestState.test_concurrent_receipts) ... ok
+test_database_permissions (test_store.TestState.test_database_permissions) ... ok
+test_duplicate_approve_denied (test_store.TestState.test_duplicate_approve_denied) ... ok
+test_empty_chain (test_store.TestState.test_empty_chain) ... ok
+test_expired_request_cannot_approve (test_store.TestState.test_expired_request_cannot_approve) ... ok
+test_id_unique (test_store.TestState.test_id_unique) ... ok
+test_pending_exposes_details_only_to_local_operator (test_store.TestState.test_pending_exposes_details_only_to_local_operator) ... ok
+test_rejection_never_consumed (test_store.TestState.test_rejection_never_consumed) ... ok
+test_reorder_detected (test_store.TestState.test_reorder_detected) ... ok
+test_world_readable_db_rejected (test_store.TestState.test_world_readable_db_rejected) ... ok
+test_wrong_key_detected (test_store.TestState.test_wrong_key_detected) ... ok
+
+----------------------------------------------------------------------
+Ran 179 tests in 25.440s
+
+OK

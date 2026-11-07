@@ -1,0 +1,1 @@
+PASS rootless Linux 4-UID E2E: tool call, approval/replay, audit, channel isolation, key denial

@@ -1,0 +1,25 @@
+{
+  "agent_id": "local-demo-agent",
+  "tool_pins": {
+    "echo_safe": "d56cfc856aff00ec1529a4c75dc29040fd0e553c0805929510ff3dfdb92ef0a6",
+    "write_demo": "ecaf452d1e1a1eee845abba0be16a2d6f27dc5d74dbb4181babe5fe7d8658dec"
+  },
+  "rules": [
+    {
+      "tool": "echo_safe",
+      "effect": "allow",
+      "conditions": [
+        {
+          "pointer": "/message",
+          "op": "starts_with",
+          "value": "hello"
+        }
+      ]
+    },
+    {
+      "tool": "write_demo",
+      "effect": "approve",
+      "conditions": []
+    }
+  ]
+}
