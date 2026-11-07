@@ -19,3 +19,8 @@ The local engineering review is at [docs/SECURITY_AUDIT_V07.md](docs/SECURITY_AU
 ## 🧨 v0.10 internal red-team findings
 
 See [`docs/RED_TEAM_ASSESSMENT_V010.md`](docs/RED_TEAM_ASSESSMENT_V010.md) for reproducible Linux agent-socket exhaustion and backend message-flood findings, mitigation tests, and known remaining attack surfaces. This report was produced by the development assistant, **not by an independent penetration tester**. Production/GA remains blocked on live host confinement, external security review, external-effect reconciliation and independent audit witnessing.
+
+
+## 🔐 v0.11 signed operator decisions
+
+A protected Linux broker now requires a separately provisioned **public verification key**. The operator CLI and overlay can use an evaluation-only software private key to sign one-use command-bound challenges. UID-only operator controls require the explicit **unsafe** `--allow-uid-only-operator` override. Do not ship an operator private key in any archive, CI artifact or repository. See [operator signing setup](docs/OPERATOR_SIGNING_V011.md) and [the v0.11 internal race/forgery assessment](docs/RED_TEAM_ASSESSMENT_V011.md). Software signatures do not constitute hardware-verified presence. Real host isolation, external pen testing and hardware-backed approval remain GA blockers.

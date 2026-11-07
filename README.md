@@ -5,12 +5,12 @@
 
 **Local-first · Harness-independent · Default-deny · Human-controlled**
 
-![Release](https://img.shields.io/badge/release-v0.10.0rc1-7c3aed?style=for-the-badge)
-![Tests](https://img.shields.io/badge/local_tests-260_passed-16a34a?style=for-the-badge)
+![Release](https://img.shields.io/badge/release-v0.11.0rc1-7c3aed?style=for-the-badge)
+![Tests](https://img.shields.io/badge/local_tests-276_passed-16a34a?style=for-the-badge)
 ![Broker](https://img.shields.io/badge/Linux_broker-rootless_UID_auth-087f8c?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-tool_subset-2563eb?style=for-the-badge)
 ![Security](https://img.shields.io/badge/default-DENY-dc2626?style=for-the-badge)
-[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.10.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
+[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.11.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)
 ![Offline](https://img.shields.io/badge/offline-first-0f766e)
@@ -18,7 +18,7 @@
 
 🇬🇧 Built by **[Caledapt](https://caledapt.com)** · *Make AI useful. Not mysterious.*
 
-**🔒 Private evaluation · 🧨 Red-team regression hardened · 🧪 Linux-only · 🚫 Not independently certified**
+**🔒 Private evaluation · 🔐 Signed operator authority · 🧪 Linux-only · 🚫 Not independently certified**
 
 </div>
 
@@ -48,7 +48,17 @@ flowchart TD
   R --> S[✅ Result / ⚠️ uncertain / ❌ failure]
 ```
 
-## 🧪 Release candidate: v0.10.0rc1
+## 🔐 New in v0.11: Signed authority, safer Pause, cryptographic replay fence
+
+A protected Linux broker now **requires a reviewed Ed25519 operator public key** unless the administrator explicitly opts into **unsafe UID-only evaluation**. Re-enabling tools, granting approvals and clearing incident quarantine require a fresh 192-bit, 30-second, single-use challenge signed over the exact command and Linux operator UID. The broker never reads the operator private key. The desktop overlay and CLI support software signing keys for evaluation; this does **not** certify a human was physically present or prevent malware stealing an operator-held software key.
+
+A red-team regression also reproduced a v0.10 **Pause/dispatch race**. Operator control writes and signed dispatch intents now have a definite ordering; after Pause has returned success no new dispatch intent can be approved under the old state. A tool with a prior recorded intent remains potentially in flight and might still produce external effects. The operator overlay remains responsive during backend execution.
+
+> 🛑 **Live protected service:** no `--operator-public-key` means startup is refused unless `--allow-uid-only-operator` is explicitly specified. Never rely on that unsafe switch for production.
+
+📘 [Operator signing and trust boundary](docs/OPERATOR_SIGNING_V011.md) · [Internal red-team reproduction](docs/RED_TEAM_ASSESSMENT_V011.md) · [Release notes](docs/RELEASE_NOTES_V011.md)
+
+## 🧪 Release candidate: v0.11.0rc1
 
 **Candidate status: not yet general availability.** Windows protected process isolation,
 independent pen testing, full Windows protected execution, full modern MCP conformance and remote
@@ -104,9 +114,9 @@ including arrays, as required by MCP.
 These are *internal attack tests*, **not an independent penetration test**.
 An agent that compromises the operator UID, kernel, host policy or broker
 signing key may still bypass this release. The broker remains **Linux-only**.
-See [red-team reproduction and limitations](docs/RED_TEAM_ASSESSMENT_V010.md).
+See [red-team reproduction and limitations](docs/RED_TEAM_ASSESSMENT_V010.md) and [10/10 scoped GitHub CI evidence](docs/CI_EVIDENCE_V010.md).
 
-## ✨ What's in v0.10.0rc1?
+## ✨ What's in v0.11.0rc1?
 
 | Capability | Evidence / limits |
 |---|---|
@@ -164,6 +174,25 @@ PYTHONPATH=src python -m catl run \
 
 Running this waits for MCP JSON-RPC input from your harness. It does not start a chat app. The demo mode intentionally **does not** claim security against a same-user compromised agent.
 
+### 🔐 Quick start: signed operator evaluation (Linux)
+
+```bash
+# As the trusted operator (in a protected directory you own):
+catl operator-keygen --private-key "$HOME/.config/catl/operator.pem" \
+  --public-key "$HOME/.config/catl/operator-public.hex"
+
+# A trusted admin places ONLY operator-public.hex into a broker-owned config path.
+# When starting the protected broker add:
+#     --operator-public-key /etc/catl/operator-public.hex
+
+catl operator --operator-socket /run/catl-operator/operator.sock \
+  --signing-key "$HOME/.config/catl/operator.pem" feature gateway_enabled on
+catl overlay --operator-socket /run/catl-operator/operator.sock \
+  --signing-key "$HOME/.config/catl/operator.pem"
+```
+
+**Software-key support is for evaluation, not hardware-backed human verification.** See [operator setup](docs/OPERATOR_SIGNING_V011.md) for installation/permission requirements.
+
 ## 🐧 Rootless Linux security: four isolated identities
 
 1. **🛡️ Broker UID:** stores pinned policies, protected key, SQLite approvals and receipt checkpoint; runs as a normal unprivileged service identity.
@@ -198,7 +227,7 @@ xvfb-run -a env PYTHONPATH=src python -m unittest discover -s tests -q
 PYTHONPATH=src python tests/integration_rootless_e2e.py
 ```
 
-**Evidence:** 203 unit/regression tests passed locally under Linux / Python 3.13.5 with Xvfb, plus a real unprivileged four-UID broker ↔ backend ↔ agent ↔ operator exercise. The root test verified operator-channel denial, tool execution, one-use approval, audit validity and signing-key access denial. GitHub CI [passed 8/8 scoped jobs](https://github.com/BryanFiFife/CATL/actions/runs/42327737185) on commit [`62547af399a4`](https://github.com/BryanFiFife/CATL/commit/62547af399a4c4191a949616ff7431eb5d236015); Windows ran portability/fail-closed tests **only**, not a protected broker. No independent penetration test has been performed.
+**v0.11 local evidence:** 278 automated tests passed across two bounded batches on Linux / Python 3.13.5, including 49 GUI and adversarial checks under Xvfb. The real four-UID (broker, operator, agent, backend) Linux signed-approval integration also passed, with unsigned-request denial, approval replay protection, audit validity and signing-key access denial. Fresh ZIP and GitHub remote CI evidence are recorded separately when available. Windows checks are **portability/fail-closed only**, not protected broker tests. No independent penetration test or hardware-held human verification has been performed.
 
 🧪 [v0.6.0rc1 audit](docs/SECURITY_AUDIT_V06.md) · 🐧 [Rootless deployment](docs/DEPLOY_ROOTLESS_LINUX.md) · 🗒️ [Release notes](docs/CHANGES_V06.md) · 🔐 [Responsible disclosure](SECURITY.md)
 
@@ -221,7 +250,8 @@ CATL is designed to complement rather than replace [AgentInterdict](https://gith
 - [x] ✅ Signed audit checkpoints, database-only rollback detection
 - [x] ✅ Desktop overlay with functional toggles and approval queue
 - [x] ✅ Dedicated non-root broker with independent backend and kernel UID-bound sockets
-- [ ] 🔐 Hardened OS service profiles, capabilities, cgroups and egress restrictions
+- [x] 🔐 One-use signed operator grants and Pause/dispatch ordering tests (software key only)
+- [ ] 🔐 Hardware-backed user-presence signing and hardened OS service profiles, capabilities, cgroups and egress restrictions
 - [ ] 🪟 Windows AppContainer/restricted-token + named-pipe ACL deployment, real Windows security results
 - [ ] 🍎 macOS sandbox and peer-authenticated UNIX socket support
 - [ ] 🌐 Full MCP current/legacy interoperability, modern upstream backend and SDK conformance
