@@ -287,6 +287,10 @@ The software Ed25519 operator signer now fails closed for **private-key use and 
 
 `State.verify()` now performs one receipt-chain scan **under the independent anchor lock**, then authenticates exactly that head before returning the result. This prevents a stale reported count/head from being paired with successful verification of a newer checkpoint and removes a duplicate O(N) scan. [Tests and limitations](docs/AUDIT_SNAPSHOT_FIX_2026-11-07.md). The native full-suite and off-host witness release gates remain **OPEN**.
 
+### 🔢 Fail-closed JSON numeric decoding
+
+CATL's native JSON decoder now rejects exponent overflow (`1e999`) and nonzero decimal underflow (`1e-9999`) before those tokens can influence agent commands, policies or operator data. [Exact regression evidence](docs/JSON_NUMBER_BOUNDARY_V012.md): 13 native-module tests passed; 15,000 deterministic numeric inputs exercised. **This is not a full native integration test or a completed roadmap gate.**
+
 ## 🩺 Broker preflight (Linux)
 
 Run as the *broker* OS account **after** initial state and external checkpoint

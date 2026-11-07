@@ -2,6 +2,7 @@
 from __future__ import annotations
 import hashlib
 import hmac
+import math
 import json
 import os
 import stat
@@ -32,8 +33,27 @@ def _pairs_no_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
+def _finite_json_float(token: str) -> float:
+    """Reject exponent overflow; JSON number syntax must not create NaN/Inf.
+
+    Python's JSON decoder rejects explicit Infinity when parse_constant is
+    supplied, but it otherwise silently accepts 1e999 as float('inf').
+    This boundary is shared by agent messages, keys, policies and receipts.
+    """
+    number = float(token)
+    if not math.isfinite(number):
+        raise ValueError("non_finite_json_number")
+    # A nonzero JSON decimal such as 1e-9999 must not silently become 0.0.
+    # This matters for strict numeric policy comparisons and amount bounds.
+    mantissa = token.split("e", 1)[0].split("E", 1)[0]
+    if number == 0.0 and any(c in "123456789" for c in mantissa):
+        raise ValueError("json_number_underflow")
+    return number
+
+
 def strict_loads(text: str) -> Any:
     return json.loads(text, object_pairs_hook=_pairs_no_duplicates,
+                      parse_float=_finite_json_float,
                       parse_constant=lambda _: (_ for _ in ()).throw(ValueError("invalid_constant")))
 
 
