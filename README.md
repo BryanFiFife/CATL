@@ -267,6 +267,10 @@ CATL is designed to complement rather than replace [AgentInterdict](https://gith
 
 CATL now includes [a detached Ed25519 release attester](docs/RELEASE_ATTESTATIONS.md) with adversarial ZIP/file-set tests and independently pinned public-key fingerprints. **This is not a hardware-backed signature, signed build provenance or independent security certification.** The combined release-assurance roadmap milestone remains open.
 
+### 🧪 Hermes trusted-runtime preflight (v1.4 private evaluation)
+
+[The reviewed Hermes integration module and regression subset](integrations/hermes/README.md) now check root-controlled verifier/import code, a root-owned Python environment, fail-closed runtime tool inventory and kernel UID/socket ACL primitives. The standalone integration subset passed **22 local tests**; the separate downloadable v1.4 lab integration bundle passed **141 local tests**. **Neither result is a live CATL broker + Hermes integration test or proof of production containment.** Native Hermes-tool bypasses and the real protected Linux host remain **OPEN** release gates.
+
 ## 🩺 Broker preflight (Linux)
 
 Run as the *broker* OS account **after** initial state and external checkpoint

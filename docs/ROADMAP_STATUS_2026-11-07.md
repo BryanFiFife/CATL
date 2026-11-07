@@ -46,3 +46,7 @@ References: [production acceptance](PRODUCTION_ACCEPTANCE_V09.md), [signed opera
 ## Signed artifact incremental milestone (7 November 2026)
 
 Added `tools/release_attest.py`, its isolated red-team regression suite and `docs/RELEASE_ATTESTATIONS.md`. An operator-owned **software** Ed25519 key signs the exact ZIP hash and manifest/source-commit claim. The verifier checks the full archive against its internal manifest and an **independently pinned** public key fingerprint. The claimed source commit is an assertion by the signing operator, **not cryptographically proven source-to-artifact correspondence**. No hardware user-presence, independent witness or external pentest is claimed. The combined roadmap milestone remains unchecked.
+
+## v1.4 protected Hermes integration source — 7 November 2026
+
+The private repository now carries `integrations/hermes/` with a documented preflight verifier, root-controlled Python import-tree checks, a fail-closed diagnostic mode, bounded subprocess cleanup and a test subset. Its standalone subset passed **22/22 locally** (including a real four-UID synthetic Linux kernel socket/peer-credential matrix). The separate signed v1.4 integration ZIP passed **141/141** local tests on two clean extractions. **No live Hermes runtime, real CATL broker, production systemd host, or independent security evaluation was exercised in this evidence.** The checked/open boxes remain **7/6**; no combined roadmap milestone is newly completed. GitHub Actions remain manual-only.
