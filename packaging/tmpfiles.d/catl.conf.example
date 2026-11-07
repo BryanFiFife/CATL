@@ -1,0 +1,6 @@
+# CATL evaluation-only boot-persistent UNIX socket directory ownership.
+# Install as /etc/tmpfiles.d/catl.conf after creating service users/groups.
+# Socket files themselves are created by the non-root broker/backend.
+d /run/catl-agent 0710 catl-broker catl-agent-ipc -
+d /run/catl-operator 0710 catl-broker catl-operator-ipc -
+d /run/catl-tools 0710 catl-tools catl-backend-ipc -
