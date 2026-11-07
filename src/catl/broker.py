@@ -17,6 +17,7 @@ import stat
 import struct
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,40 @@ MAX_CLIENTS = 16
 MAX_AGENT_CLIENTS = 8
 MAX_OPERATOR_CLIENTS = MAX_CLIENTS - MAX_AGENT_CLIENTS
 MAX_AGENT_REQUESTS_PER_CONNECTION = 64
+MAX_AGENT_REQUESTS_PER_MINUTE = 600
+
+
+class AgentRequestBudget:
+    """Per-broker, thread-safe agent request admission independent of sockets.
+
+    This best-effort in-memory limit protects expensive parsing and audit
+    operations; it is NOT a durable business-action rate limit and cannot stop
+    all resource exhaustion on a compromised host.
+    """
+
+    def __init__(self, limit: int = MAX_AGENT_REQUESTS_PER_MINUTE, window_seconds: float = 60.0):
+        if type(limit) is not int or not 1 <= limit <= 10000:
+            raise ValueError("agent_request_limit_invalid")
+        if type(window_seconds) not in (int, float) or not 0 < window_seconds <= 3600:
+            raise ValueError("agent_request_window_invalid")
+        self.limit = limit
+        self.window_seconds = window_seconds
+        self._lock = threading.Lock()
+        self._window_start = time.monotonic()
+        self._used = 0
+
+    def admit(self) -> bool:
+        # Read the clock only after owning the mutex. A stale pre-lock
+        # timestamp can otherwise reset a newer window and overspend budget.
+        with self._lock:
+            now = time.monotonic()
+            if now < self._window_start or now - self._window_start >= self.window_seconds:
+                self._window_start = now
+                self._used = 0
+            if self._used >= self.limit:
+                return False
+            self._used += 1
+            return True
 
 
 def _peer_uid(conn: socket.socket) -> int:
@@ -140,6 +175,9 @@ class BrokerServer:
             "operator": threading.BoundedSemaphore(MAX_OPERATOR_CLIENTS),
         }
         self._sockets: list[socket.socket] = []
+        # Shared across reconnects/threads; keeps a compromised agent from
+        # evading the per-connection frame cap with unlimited new sockets.
+        self._agent_budget = AgentRequestBudget()
 
     def _op(self, msg: dict[str, Any], uid: int, *, authorized: bool = False) -> dict[str, Any]:
         name = msg.get("op")
@@ -211,6 +249,16 @@ class BrokerServer:
                     return
                 for _request_number in range(MAX_AGENT_REQUESTS_PER_CONNECTION):
                     if self.stop.is_set():
+                        return
+                    # Charge BEFORE JSON parsing: malformed frames and reconnects
+                    # must not force unbounded policy/audit work. The operator's
+                    # separate socket and reserve remain available for Pause.
+                    if not self._agent_budget.admit():
+                        try:
+                            _write_frame(stream, {"jsonrpc": "2.0", "id": None,
+                                "error": {"code": -32029, "message": "agent_request_budget_exceeded"}})
+                        except (OSError, ValueError):
+                            pass
                         return
                     try:
                         msg = _read_frame(stream)

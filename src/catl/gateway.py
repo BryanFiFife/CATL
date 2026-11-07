@@ -439,7 +439,7 @@ class Gateway:
 
     def _tool_call(self, id_: Any, params: dict[str, Any]) -> dict[str, Any]:
         name, args = params.get("name"), params.get("arguments", {})
-        if not isinstance(name, str) or not name or not isinstance(args, dict):
+        if not isinstance(name, str) or not 1 <= len(name) <= 128 or not isinstance(args, dict):
             return error(id_, "invalid_tool_call", -32602)
         # Reject oversized argument payloads even for programmatic callers.
         try:
