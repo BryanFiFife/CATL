@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "caledapt-agent-trust"
-version = "0.8.0rc1"
+version = "0.9.0rc1"
 description = "Local-first MCP tool gateway with rootless Linux broker, protected operator IPC, signed rate-limit evidence and anchored receipts"
 readme = "README.md"
 requires-python = ">=3.11"
