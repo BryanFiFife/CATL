@@ -17,13 +17,13 @@ from .store import State, binding_hash
 from .isolation import isolation_for, child_environment, validate_workdir
 from .protocol import classify, modernize, discovery
 from .verifier import FileDigestVerifier
-from .schema import validate_arguments
+from .schema import validate_arguments, validate_structured_output
 
 # The backend is untrusted even when a tool was present in a pinned catalogue.
 # Never pass an oversized or malformed tool reply into a success path.
 MAX_TOOL_REPLY_BYTES = 512 * 1024
 
-def checked_tool_reply(reply: dict[str, Any]) -> tuple[str, Any]:
+def checked_tool_reply(reply: dict[str, Any], *, tool: dict[str, Any] | None = None) -> tuple[str, Any]:
     if not isinstance(reply, dict) or ("result" in reply) == ("error" in reply):
         raise ValueError("backend_response_ambiguous")
     try:
@@ -42,6 +42,12 @@ def checked_tool_reply(reply: dict[str, Any]) -> tuple[str, Any]:
     result = reply["result"]
     if not isinstance(result, dict) or type(result.get("isError", False)) is not bool:
         raise ValueError("backend_tool_result_invalid")
+    # MCP 2026 supports multi-round-trip results. CATL has no trusted MRTR
+    # replay/approval contract, so treating input_required as a completed
+    # action could both mislead clients and trigger an unsafe duplicate call.
+    # The legacy backend may omit resultType but must never invent a variant.
+    if result.get("resultType", "complete") != "complete":
+        raise ValueError("backend_result_not_complete")
     content = result.get("content")
     if not isinstance(content, list) or len(content) > 64:
         raise ValueError("backend_tool_content_invalid")
@@ -50,6 +56,8 @@ def checked_tool_reply(reply: dict[str, Any]) -> tuple[str, Any]:
             raise ValueError("backend_tool_content_invalid")
         if item["type"] == "text" and not isinstance(item.get("text"), str):
             raise ValueError("backend_tool_text_invalid")
+    if tool is not None:
+        validate_structured_output(tool, result)
     # Strip backend-supplied _meta; it is untrusted tool data, not CATL
     # authority. Non-metadata result fields are preserved for SDK clients.
     return "result", {k: v for k, v in result.items() if k != "_meta"}
@@ -213,7 +221,7 @@ class Gateway:
             return
         response = self.backend.request("initialize", {
             "protocolVersion": "2025-11-25",
-            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.7.0rc1"}})
+            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.8.0rc1"}})
         if "error" in response or not isinstance(response.get("result"), dict):
             raise RuntimeError("backend_initialization_failed")
         self.backend.notify("notifications/initialized")
@@ -294,7 +302,7 @@ class Gateway:
             return {"jsonrpc": "2.0", "id": id_, "result": {
                 "protocolVersion": "2025-11-25",
                 "capabilities": {"tools": {"listChanged": False}},
-                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.7.0rc1"}}}
+                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.8.0rc1"}}}
         if method == "tools/list":
             try:
                 result = {"jsonrpc": "2.0", "id": id_, "result": {"tools": self._refresh()}}
@@ -380,7 +388,7 @@ class Gateway:
                 self._record(name, binding, effect, f"transport_failure:{type(exc).__name__}")
                 return error(id_, "tool_transport_failure")
             try:
-                reply_kind, payload = checked_tool_reply(reply)
+                reply_kind, payload = checked_tool_reply(reply, tool=self.available[name])
             except ValueError:
                 # The side effect may already have happened. Do not present a
                 # malformed reply as success; leave explicit uncertain evidence.

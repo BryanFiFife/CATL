@@ -15,7 +15,7 @@ def _state(folder: Path) -> State:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.7.0rc1 Linux hardening candidate")
+    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.8.0rc1 Linux hardening candidate")
     sub = p.add_subparsers(dest="command", required=True)
     doctor = sub.add_parser("doctor", help="Preflight Linux broker state, identities and signed audit; no auto-repair")
     doctor.add_argument("--config", type=Path, required=True)

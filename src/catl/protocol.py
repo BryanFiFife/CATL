@@ -12,7 +12,7 @@ VERSION_KEY = "io.modelcontextprotocol/protocolVersion"
 CAPABILITY_KEY = "io.modelcontextprotocol/clientCapabilities"
 CLIENT_INFO_KEY = "io.modelcontextprotocol/clientInfo"
 SERVER_INFO_KEY = "io.modelcontextprotocol/serverInfo"
-SERVER_INFO = {"name": "caledapt-agent-trust", "version": "0.7.0rc1"}
+SERVER_INFO = {"name": "caledapt-agent-trust", "version": "0.8.0rc1"}
 
 
 def classify(msg: dict[str, Any]) -> str:

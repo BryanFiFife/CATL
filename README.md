@@ -5,12 +5,12 @@
 
 **Local-first · Harness-independent · Default-deny · Human-controlled**
 
-![Release](https://img.shields.io/badge/release-v0.7.0rc1-7c3aed?style=for-the-badge)
-![Tests](https://img.shields.io/badge/local_tests-222_passed-16a34a?style=for-the-badge)
+![Release](https://img.shields.io/badge/release-v0.8.0rc1-7c3aed?style=for-the-badge)
+![Tests](https://img.shields.io/badge/local_tests-234_passed-16a34a?style=for-the-badge)
 ![Broker](https://img.shields.io/badge/Linux_broker-rootless_UID_auth-087f8c?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-tool_subset-2563eb?style=for-the-badge)
 ![Security](https://img.shields.io/badge/default-DENY-dc2626?style=for-the-badge)
-[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.7.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
+[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.8.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)
 ![Offline](https://img.shields.io/badge/offline-first-0f766e)
@@ -48,16 +48,22 @@ flowchart TD
   R --> S[✅ Result / ⚠️ uncertain / ❌ failure]
 ```
 
-## 🧪 Release candidate: v0.7.0rc1
+## 🧪 Release candidate: v0.8.0rc1
 
 **Candidate status: not yet general availability.** Windows protected process isolation,
 independent pen testing, full Windows protected execution, full modern MCP conformance and remote
 side-effect verification remain unpassed release gates. See
-[release gates](docs/RELEASE_GATES_V07.md) and [security review](docs/SECURITY_AUDIT_V07.md).
+[release gates](docs/PRODUCTION_ACCEPTANCE_V08.md) and [security review](docs/SECURITY_AUDIT_V07.md).
 
-**New in v0.7:** hardened policy file ownership, immediate approval revocation when the operator disables a safety feature, and fail-closed validation of untrusted tool replies. The current 2026 MCP `_meta` envelope is checked for the supported stdio subset. `catl host-audit` provides read-only checks of the live Linux systemd service profile; a separate recovery drill proves that database-only rollback is rejected in a disposable environment. [Full notes](docs/RELEASE_NOTES_V07.md).
+**Previously in v0.7:** hardened policy file ownership, immediate approval revocation when the operator disables a safety feature, and fail-closed validation of untrusted tool replies. The current 2026 MCP `_meta` envelope is checked for the supported stdio subset. `catl host-audit` provides read-only checks of the live Linux systemd service profile; a separate recovery drill proves that database-only rollback is rejected in a disposable environment. [Full notes](docs/RELEASE_NOTES_V07.md).
 
-## ✨ What's in v0.7.0rc1?
+## 🔐 New in v0.8: Pinned output-contract firewall
+
+CATL now rejects ambiguous MCP result kinds (including `input_required`) as **uncertain, not completed**. If a pinned tool definition declares `outputSchema`, the downstream server's `structuredContent` must match that locally validated JSON Schema before the caller receives a success. Remote `$ref` loading is refused. The original tool's potential side effect is recorded, and CATL **does not automatically retry** a call whose result was unverified.
+
+This is a narrower, testable guarantee—not proof that the external system actually changed correctly or that prompt injection can never occur. See [the v0.8 acceptance checklist](docs/PRODUCTION_ACCEPTANCE_V08.md).
+
+## ✨ What's in v0.8.0rc1?
 
 | Capability | Evidence / limits |
 |---|---|

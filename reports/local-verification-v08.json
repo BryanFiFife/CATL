@@ -1,0 +1,9 @@
+{
+  "artifact": "CATL v0.8.0rc1 private Linux evaluation candidate",
+  "local_full_suite": {"passed": 234, "failed": 0, "environment": "Linux, Python 3.13.5, Xvfb virtual display"},
+  "new_result_firewall_tests": 12,
+  "static_sanity": "passed",
+  "synthetic_rollback_drill": "passed",
+  "release_outcome": "not production GA",
+  "unresolved": ["independent penetration test", "real target-host sandbox attestation", "witnessed audit/signing evidence", "external effect reconciliation", "official MCP SDK conformance"]
+}

@@ -36,3 +36,30 @@ def validate_arguments(tool: dict[str, Any], arguments: dict[str, Any]) -> None:
         Draft202012Validator(schema, registry=Registry(retrieve=refuse_remote)).validate(arguments)
     except (SchemaError, ValidationError, RecursionError, LookupError, ValueError) as exc:
         raise ValueError("tool_arguments_invalid_against_schema") from exc
+
+
+def validate_structured_output(tool: dict[str, Any], result: dict[str, Any]) -> None:
+    """Validate a tool's optional structured output under its PINNED local schema.
+
+    A declared outputSchema is not an optional advisory when a tool reports
+    success. A mismatch leaves the execution outcome uncertain, because the
+    backend may already have produced side effects. No remote schema retrieval.
+    """
+    schema = tool.get("outputSchema")
+    if schema is None:
+        return
+    if not isinstance(schema, dict):
+        raise ValueError("tool_output_schema_invalid")
+    _refs_local_only(schema)
+    if result.get("isError") is True:
+        return  # Error payloads have no obligation to match success schemas.
+    structured = result.get("structuredContent")
+    if not isinstance(structured, dict):
+        raise ValueError("tool_structured_content_missing")
+    def refuse_remote(uri: str):
+        raise ValueError("remote_schema_loading_denied")
+    try:
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema, registry=Registry(retrieve=refuse_remote)).validate(structured)
+    except (SchemaError, ValidationError, RecursionError, LookupError, ValueError) as exc:
+        raise ValueError("tool_structured_content_invalid") from exc
