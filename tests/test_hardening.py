@@ -28,7 +28,8 @@ def packet(method, params=None, id_=1):
 
 def modern(method, params=None, id_=1, *, version=MODERN, capabilities=None):
     arg = {**(params or {})}
-    arg['_meta'] = {VERSION_KEY: version, CAPABILITY_KEY: {} if capabilities is None else capabilities}
+    arg['_meta'] = {VERSION_KEY: version, CAPABILITY_KEY: {} if capabilities is None else capabilities,
+                    'io.modelcontextprotocol/clientInfo': {'name':'CATL-test','version':'1.0'}}
     return packet(method, arg, id_)
 
 
@@ -157,7 +158,7 @@ class ModernTests(unittest.TestCase):
 
     def test_malformed_backend_result_denied(self):
         self.backend.tamper_result = True
-        self.assertEqual(self.gw.handle(packet('tools/call', {'name':'echo_safe','arguments':{'message':'hello'}}))['error']['message'], 'backend_result_invalid')
+        self.assertEqual(self.gw.handle(packet('tools/call', {'name':'echo_safe','arguments':{'message':'hello'}}))['error']['message'], 'backend_result_unverified_side_effect_possible')
 
 
 class IsolationTests(unittest.TestCase):

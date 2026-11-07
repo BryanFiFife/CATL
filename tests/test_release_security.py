@@ -101,7 +101,7 @@ class PathSecurity(unittest.TestCase):
 
 class MetadataSecurity(unittest.TestCase):
     def test_reported_server_version_is_release_candidate(self):
-        self.assertEqual(SERVER_INFO['version'],'0.6.0-rc1')
+        self.assertEqual(SERVER_INFO['version'],'0.7.0rc1')
 
 if __name__=='__main__':
     unittest.main()

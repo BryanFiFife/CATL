@@ -9,9 +9,11 @@ import json
 import re
 import stat
 import zipfile
+import tomllib
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
+VERSION=tomllib.loads((ROOT/'pyproject.toml').read_text(encoding='utf-8'))['project']['version']
 STAMP=(2026,11,7,0,0,0)
 SKIP_DIRS={'.git','.pytest_cache','.mypy_cache','.ruff_cache','__pycache__','build','dist'}
 SKIP_SUFFIXES=('.pyc','.pyo','.whl')
@@ -33,8 +35,8 @@ def release_files():
 
 
 def manifest(entries):
-    return {'name':'caledapt-agent-trust','version':'0.6.0rc1',
-        'release_type':'private-evaluation-release-candidate',
+    return {'name':'caledapt-agent-trust','version':VERSION,
+        'release_type':'private-linux-hardening-release-candidate',
         'algorithm':'sha256','signed':False,
         'files':{name:hashlib.sha256(data).hexdigest() for name,data in entries}}
 
@@ -70,7 +72,7 @@ def verify(path:Path):
             raise ValueError('symlink_zip_member')
         m=json.loads(z.read('RELEASE_MANIFEST.json'))
         expected=set(m['files'])|{'RELEASE_MANIFEST.json','SHA256SUMS.txt'}
-        if set(names)!=expected or m.get('version')!='0.6.0rc1':
+        if set(names)!=expected or m.get('version')!=VERSION:
             raise ValueError('release_file_set_mismatch')
         for name,digest in m['files'].items():
             if hashlib.sha256(z.read(name)).hexdigest()!=digest:
