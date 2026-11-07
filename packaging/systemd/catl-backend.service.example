@@ -2,6 +2,8 @@
 # The backend is NOT inherently sandboxed by its UID. Review service restrictions.
 [Unit]
 Description=CATL restricted tool backend (evaluation)
+StartLimitIntervalSec=60
+StartLimitBurst=3
 
 [Service]
 Type=simple
@@ -12,14 +14,21 @@ WorkingDirectory=/var/lib/catl-tools/work
 ExecStart=/usr/local/bin/catl backend-service --socket /run/catl-tools/tools.sock --broker-uid BROKER_UID --broker-gid BACKEND_IPC_GID --backend-workdir /var/lib/catl-tools/work -- /usr/local/bin/python3 /opt/catl/tool-server.py
 Restart=on-failure
 RestartSec=3
+TimeoutStopSec=10
+KillMode=control-group
+OOMPolicy=stop
 UMask=0077
 NoNewPrivileges=true
 PrivateDevices=yes
 PrivateNetwork=yes
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
-ProtectControlGroups=yes
 ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+RestrictNamespaces=true
 RestrictSUIDSGID=yes
 PrivateTmp=true
 ProtectSystem=strict
@@ -29,10 +38,16 @@ RestrictAddressFamilies=AF_UNIX
 IPAddressDeny=any
 CapabilityBoundingSet=
 AmbientCapabilities=
+KeyringMode=private
 LockPersonality=true
 RestrictRealtime=true
 SystemCallArchitectures=native
+SystemCallFilter=~@mount @swap @reboot @raw-io
+SystemCallErrorNumber=EPERM
+LimitCORE=0
 LimitNOFILE=512
+MemoryMax=1536M
+MemorySwapMax=0
 TasksMax=64
 
 [Install]

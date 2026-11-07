@@ -275,6 +275,10 @@ CATL now includes [a detached Ed25519 release attester](docs/RELEASE_ATTESTATION
 
 The Linux broker now limits agent-channel **request attempts across reconnects and threads** (600 per monotonic 60-second window), before JSON parsing and expensive ledger work. Grossly oversized tool names are rejected before they can enter audit-binding calculations. This is an in-memory availability guard, **not** a durable business-action quota or a substitute for cgroups/OS confinement. See [native ingress hardening](docs/AGENT_ADMISSION_RATE_LIMIT_V011.md). The production Linux host security gate remains open.
 
+### 🐧 Restricted Linux service templates (static verification)
+
+[Broker and backend systemd examples](packaging/systemd/) now include finite memory/swap/task limits, crash-loop limits, core-dump suppression and additional namespace/syscall restrictions. Both pass offline syntax verification; **live host containment remains unverified**. [Evidence and deployment cautions](docs/OS_SERVICE_PROFILE_HARDENING_V011.md).
+
 ## 🩺 Broker preflight (Linux)
 
 Run as the *broker* OS account **after** initial state and external checkpoint

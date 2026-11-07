@@ -4,6 +4,8 @@
 Description=CATL protected rootless Linux broker (evaluation)
 After=catl-backend.service
 Requires=catl-backend.service
+StartLimitIntervalSec=60
+StartLimitBurst=3
 
 [Service]
 Type=simple
@@ -13,14 +15,21 @@ SupplementaryGroups=catl-agent-ipc catl-operator-ipc catl-backend-ipc
 ExecStart=/usr/local/bin/catl broker --config /etc/catl/policy.json --state-dir /var/lib/catl/state --anchor-path /var/lib/catl-anchor/head.json --agent-socket /run/catl-agent/agent.sock --operator-socket /run/catl-operator/operator.sock --agent-uid AGENT_UID --operator-uid OPERATOR_UID --operator-public-key /etc/catl/operator-public.hex --agent-gid AGENT_GID --operator-gid OPERATOR_GID --backend-socket /run/catl-tools/tools.sock --backend-uid TOOLS_UID
 Restart=on-failure
 RestartSec=3
+TimeoutStopSec=10
+KillMode=control-group
+OOMPolicy=stop
 UMask=0077
 NoNewPrivileges=true
 PrivateDevices=yes
 PrivateNetwork=yes
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
-ProtectControlGroups=yes
 ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+RestrictNamespaces=true
 RestrictSUIDSGID=yes
 PrivateTmp=true
 ProtectSystem=strict
@@ -30,10 +39,16 @@ RestrictAddressFamilies=AF_UNIX
 IPAddressDeny=any
 CapabilityBoundingSet=
 AmbientCapabilities=
+KeyringMode=private
 LockPersonality=true
 RestrictRealtime=true
 SystemCallArchitectures=native
+SystemCallFilter=~@mount @swap @reboot @raw-io
+SystemCallErrorNumber=EPERM
+LimitCORE=0
 LimitNOFILE=512
+MemoryMax=768M
+MemorySwapMax=0
 TasksMax=64
 
 [Install]
