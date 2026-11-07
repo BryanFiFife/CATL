@@ -62,3 +62,8 @@ Both CATL systemd evaluation templates now include finite memory/swap limits, st
 ## Software operator key provisioning hardening — 7 November 2026
 
 Private-key generation and loading explicitly fail closed outside POSIX until Windows ACL handling is implemented. POSIX key provisioning checks the immediate parent directory for owner/mode and symlink trust; private signer rejects hardlinked secrets. **11 isolated key-handler tests passed on Linux** with real Ed25519 signatures, including simulated Windows-deny cases; an additional Windows-native regression is prepared for a real platform test. The full CATL native suite **was not executed** in this environment. The hardware-human-presence, Windows protected execution and external pentest gates remain OPEN. See [key guard evidence](OPERATOR_KEY_GUARD_2026-11-07.md).
+
+
+## Audit verification snapshot integrity — 7 November 2026
+
+Fixed `src/catl/store.py::State.verify()` to hold the independent anchor lock from receipt scanning through checkpoint comparison. The earlier two-pass implementation could return a stale count/head while authenticating a newer checkpoint after a concurrent append. New source-native regression cases cover a one-pass verification, anchored concurrent append, missing anchor, database errors and unanchored evaluation. **7 isolated method-level tests passed**, including a deterministic old/new reproduction; the new full-native tests are written and syntax-checked but **not executed against the complete private CATL checkout here**. The external witness/independent review milestone remains open. See [evidence](AUDIT_SNAPSHOT_FIX_2026-11-07.md).

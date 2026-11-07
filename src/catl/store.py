@@ -492,12 +492,23 @@ class State:
         return mac
 
     def verify(self) -> dict[str, Any]:
+        """Return one coherent verified receipt/anchor snapshot, or fail closed.
+
+        Keep the receipt scan AND the external checkpoint comparison under
+        one anchor lock. A separate later recheck could authenticate a newer
+        checkpoint but return the earlier unanchored count/head (TOCTOU).
+        This also avoids a second full O(N) ledger scan per verification.
+        """
         try:
-            with closing(self._conn()) as db:
-                count, head = self._verified_head(db)
             if self.anchor is not None:
-                self.assert_anchor()
+                with self.anchor.locked():
+                    with closing(self._conn()) as db:
+                        count, head = self._verified_head(db)
+                        self.anchor.assert_head(count, head)
+            else:
+                with closing(self._conn()) as db:
+                    count, head = self._verified_head(db)
             return {"valid": True, "count": count, "head_mac": head,
                     "externally_anchored": self.anchor is not None}
-        except (ValueError, PermissionError, OSError) as exc:
+        except (ValueError, PermissionError, OSError, sqlite3.Error, TypeError) as exc:
             return {"valid": False, "reason": str(exc)}

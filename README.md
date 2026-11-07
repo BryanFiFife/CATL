@@ -283,6 +283,10 @@ The Linux broker now limits agent-channel **request attempts across reconnects a
 
 The software Ed25519 operator signer now fails closed for **private-key use and generation on unsupported non-POSIX hosts**. Linux/Unix provisioning rejects untrusted writable/symlink parent directories; private signing keys with multiple hard links are refused. Read-only public-key verification remains available. [Key handling test scope](docs/OPERATOR_KEY_GUARD_2026-11-07.md). **This does not implement Windows ACLs, hardware-backed signing or operator presence.**
 
+### 🧾 Atomic audit verification snapshot (native-source repair)
+
+`State.verify()` now performs one receipt-chain scan **under the independent anchor lock**, then authenticates exactly that head before returning the result. This prevents a stale reported count/head from being paired with successful verification of a newer checkpoint and removes a duplicate O(N) scan. [Tests and limitations](docs/AUDIT_SNAPSHOT_FIX_2026-11-07.md). The native full-suite and off-host witness release gates remain **OPEN**.
+
 ## 🩺 Broker preflight (Linux)
 
 Run as the *broker* OS account **after** initial state and external checkpoint
