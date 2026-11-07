@@ -12,7 +12,7 @@ VERSION_KEY = "io.modelcontextprotocol/protocolVersion"
 CAPABILITY_KEY = "io.modelcontextprotocol/clientCapabilities"
 CLIENT_INFO_KEY = "io.modelcontextprotocol/clientInfo"
 SERVER_INFO_KEY = "io.modelcontextprotocol/serverInfo"
-SERVER_INFO = {"name": "caledapt-agent-trust", "version": "0.6.0-rc1"}
+SERVER_INFO = {"name": "caledapt-agent-trust", "version": "0.7.0rc1"}
 
 
 def classify(msg: dict[str, Any]) -> str:
@@ -33,10 +33,14 @@ def classify(msg: dict[str, Any]) -> str:
         raise ValueError("unsupported_protocol_version")
     if not isinstance(meta.get(CAPABILITY_KEY), dict):
         raise ValueError("modern_client_capabilities_required")
-    if CLIENT_INFO_KEY in meta:
-        ident = meta[CLIENT_INFO_KEY]
-        if not isinstance(ident, dict) or not isinstance(ident.get("name"), str) or not isinstance(ident.get("version"), str):
-            raise ValueError("modern_client_info_invalid")
+    if CLIENT_INFO_KEY not in meta:
+        raise ValueError("modern_client_info_required")
+    ident = meta[CLIENT_INFO_KEY]
+    if (not isinstance(ident, dict) or not isinstance(ident.get("name"), str) or
+            not ident.get("name") or len(ident["name"]) > 128 or
+            not isinstance(ident.get("version"), str) or not ident.get("version") or
+            len(ident["version"]) > 64):
+        raise ValueError("modern_client_info_invalid")
     return "modern"
 
 

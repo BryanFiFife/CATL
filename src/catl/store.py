@@ -213,7 +213,7 @@ class State:
                              (identifier, int(time.time()))).fetchone()
             if row is None:
                 return False
-            if self._approval_history(db, identifier, {"approval_decided", "approval_consumed"}):
+            if self._approval_history(db, identifier, {"approval_decided", "approval_consumed", "approval_revoked"}):
                 raise PermissionError("approval_decision_replay_detected")
             binding, created_at, expires_at, detail, request_mac = row
             expected = hmac_hex(self.key, {"domain": "CATL/APPROVAL-REQUEST/v1", "id": identifier,
@@ -237,7 +237,7 @@ class State:
             if row is None:
                 return False
             identifier, row_binding, created_at, expires_at, detail, approver, request_mac, decision_mac = row
-            if self._approval_history(db, identifier, {"approval_consumed"}):
+            if self._approval_history(db, identifier, {"approval_consumed", "approval_revoked"}):
                 raise PermissionError("approval_consumption_replay_detected")
             request_expected = hmac_hex(self.key, {"domain": "CATL/APPROVAL-REQUEST/v1", "id": identifier,
                 "binding": row_binding, "created_at": created_at, "expires_at": expires_at, "detail": detail})
@@ -295,6 +295,17 @@ class State:
                 raise PermissionError("signed_control_rollback_detected")
             return document
 
+    def _revoke_approvals_tx(self, db: sqlite3.Connection, actor: str) -> int:
+        # A global/operator kill switch invalidates all not-yet-consumed
+        # approvals, even when they were signed previously. Each revocation is
+        # anchored in the receipt chain so old approval rows cannot be replayed.
+        rows = db.execute("SELECT id,binding FROM approvals WHERE status IN ('pending','approved')").fetchall()
+        for identifier, binding in rows:
+            db.execute("UPDATE approvals SET status='revoked' WHERE id=?", (identifier,))
+            self._append_tx(db, {"at": int(time.time()), "decision": "approval_revoked",
+                "request_id": identifier, "binding": binding, "operator": actor})
+        return len(rows)
+
     def _update_control(self, actor: str, mutate) -> dict[str, Any]:
         if not isinstance(actor, str) or not actor.strip() or len(actor) > 128:
             raise ValueError("invalid_operator_identity")
@@ -307,6 +318,10 @@ class State:
             if after is not None and after != digest(current):
                 raise PermissionError("signed_control_rollback_detected")
             revised = mutate({**current, "disabled_tools": list(current["disabled_tools"])})
+            turned_off = any(current[name] and not revised[name] for name in TOGGLES)
+            disabled_more_tools = bool(set(revised["disabled_tools"]) - set(current["disabled_tools"]))
+            if turned_off or disabled_more_tools:
+                self._revoke_approvals_tx(db, actor)
             body, mac = encode(revised, self.key)
             db.execute("UPDATE operator_controls SET body=?,mac=? WHERE id=1", (body, mac))
             self._append_tx(db, {"at": int(time.time()), "agent_id": "OPERATOR",

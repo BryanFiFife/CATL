@@ -50,6 +50,13 @@ class DoctorTests(unittest.TestCase):
     def test_strict_requires_host_attestation(self):
         self.assertFalse(self.check(strict=True)['ok'])
 
+    def test_unverified_permitted_tool_is_explicit_warning(self):
+        self.config.write_text('{"agent_id":"example","tool_pins":{"read":' + '"' + 'a'*64 + '"' + '},"rules":[{"tool":"read","effect":"allow","conditions":[]}]}')
+        checks=self.check()['checks']
+        assurance=[x for x in checks if x['check']=='tool_effect_assurance']
+        self.assertEqual(len(assurance),1)
+        self.assertEqual(assurance[0]['status'],'warn')
+
     def test_missing_anchor_fails_without_recreating(self):
         self.anchor.unlink()
         result=self.check()

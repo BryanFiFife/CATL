@@ -178,7 +178,8 @@ class TestControls(unittest.TestCase):
 
     def test_modern_tool_list_zero_cache(self):
         params = {"_meta": {"io.modelcontextprotocol/protocolVersion":"2026-07-28",
-           "io.modelcontextprotocol/clientCapabilities":{}}}
+           "io.modelcontextprotocol/clientCapabilities":{},
+           "io.modelcontextprotocol/clientInfo":{"name":"CATL-test","version":"1.0"}}}
         resp = self.gw.handle({"jsonrpc":"2.0", "id":2,"method":"tools/list","params":params})
         self.assertEqual(resp["result"]["ttlMs"], 0)
         self.assertEqual(resp["result"]["cacheScope"], "private")

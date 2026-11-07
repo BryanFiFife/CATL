@@ -79,14 +79,32 @@ class Policy:
 
     @classmethod
     def from_file(cls, path: Path) -> "Policy":
-        if path.is_symlink():
+        # The policy is authority-bearing. A readable file owned by the AGENT
+        # can still be rewritten by that agent even when its mode is 0644.
+        # Restrict both the file and its containing directory to trusted UIDs.
+        if path.is_symlink() or path.parent.is_symlink():
             raise PermissionError("policy_symlink_refused")
-        info = path.stat()
-        if not stat.S_ISREG(info.st_mode):
-            raise PermissionError("policy_not_regular_file")
-        if os.name == "posix" and info.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
-            raise PermissionError("policy_writable_by_group_or_others")
-        return cls.from_dict(strict_loads(path.read_text(encoding="utf-8")))
+        directory = path.parent.stat()
+        if not stat.S_ISDIR(directory.st_mode):
+            raise PermissionError("policy_directory_invalid")
+        if os.name == "posix":
+            if directory.st_uid not in (0, os.geteuid()) or directory.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+                raise PermissionError("policy_directory_not_trusted")
+        flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(path, flags)
+        try:
+            info = os.fstat(fd)
+            if not stat.S_ISREG(info.st_mode) or info.st_size > 1024 * 1024:
+                raise PermissionError("policy_file_not_regular_or_too_large")
+            if os.name == "posix" and (info.st_uid not in (0, os.geteuid()) or info.st_mode & (stat.S_IWGRP | stat.S_IWOTH)):
+                raise PermissionError("policy_file_not_trusted")
+            with os.fdopen(fd, "rb", closefd=False) as stream:
+                source = stream.read(1024 * 1024 + 1)
+        finally:
+            os.close(fd)
+        if len(source) > 1024 * 1024:
+            raise PermissionError("policy_file_too_large")
+        return cls.from_dict(strict_loads(source.decode("utf-8")))
 
     def pinned(self, tool: dict[str, Any]) -> bool:
         name = tool.get("name")
