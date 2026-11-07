@@ -53,7 +53,7 @@ The tests do **not** authorize testing unrelated networks, external services or 
 
 ## Release decision
 
-**Internal code vulnerabilities reproduced and fixed, subject to continued CI verification.** Production/general availability remains **BLOCKED** on the acceptance criteria in `docs/PRODUCTION_ACCEPTANCE_V09.md` and [GitHub issue #5](https://github.com/BryanFiFife/CATL/issues/5). The repository and release candidate must remain private pending approval.
+**Internal code vulnerabilities reproduced and fixed, with 10/10 scoped GitHub CI jobs passed at the tested code commit.** Production/general availability remains **BLOCKED** on the acceptance criteria in `docs/PRODUCTION_ACCEPTANCE_V09.md` and [GitHub issue #5](https://github.com/BryanFiFife/CATL/issues/5). The repository and release candidate must remain private pending approval.
 
 ### Referenced specifications and secure CI guidance
 

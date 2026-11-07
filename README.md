@@ -104,7 +104,7 @@ including arrays, as required by MCP.
 These are *internal attack tests*, **not an independent penetration test**.
 An agent that compromises the operator UID, kernel, host policy or broker
 signing key may still bypass this release. The broker remains **Linux-only**.
-See [red-team reproduction and limitations](docs/RED_TEAM_ASSESSMENT_V010.md).
+See [red-team reproduction and limitations](docs/RED_TEAM_ASSESSMENT_V010.md) and [10/10 scoped GitHub CI evidence](docs/CI_EVIDENCE_V010.md).
 
 ## ✨ What's in v0.10.0rc1?
 
