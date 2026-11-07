@@ -4,6 +4,8 @@
 
 `tools/release_attest.py` makes and verifies a **detached** signature binding a source ZIP's exact SHA-256, its internal `RELEASE_MANIFEST.json` and `SHA256SUMS.txt`, its declared version and the source commit claimed by the signing operator. It also supports the separate Hermes integration ZIP's `MANIFEST_SHA256.txt`. Verification fails closed for duplicate archive members, malicious paths, symlinks, file-set/hash mismatch, unbounded expansion and wrong keys/signatures/commits.
 
+**Platform note:** Private-key generation/signing is currently restricted to POSIX hosts with reviewed file ownership and mode checks; Windows private-key ACL enforcement is **not** implemented. A Windows operator can verify an attestation using the independently pinned public-key fingerprint, but must sign on a protected Linux/macOS operator host.
+
 ## Key management (operator only)
 
 Create a private, trusted directory owned by you, not accessible to the CATL agent or backend. Never generate the release key inside Hermes or the broker.

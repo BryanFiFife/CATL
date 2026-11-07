@@ -130,14 +130,16 @@ def validate_release_zip(path: Path) -> dict:
 
 def _parent_safe(path: Path, *, for_private: bool) -> None:
     if not path.is_absolute():raise ValueError('key_path_not_absolute')
+    if os.name == 'nt' and for_private:
+        raise PermissionError('private_signing_requires_a_reviewed_posix_permission_boundary; Windows ACL support pending')
     p=path.parent
     while True:
         s=p.lstat()
         if stat.S_ISLNK(s.st_mode) or not stat.S_ISDIR(s.st_mode):
             raise PermissionError('untrusted_key_parent')
-        if s.st_mode & 0o022:
+        if os.name == 'posix' and s.st_mode & 0o022:
             raise PermissionError('writable_key_parent')
-        if for_private and s.st_uid not in (os.geteuid(),0):
+        if os.name == 'posix' and for_private and s.st_uid not in (os.geteuid(),0):
             raise PermissionError('key_parent_wrong_owner')
         if p==p.parent:break
         p=p.parent
@@ -150,9 +152,9 @@ def _read_key(path: Path, *, private: bool) -> bytes:
         s=os.fstat(fd)
         if not stat.S_ISREG(s.st_mode) or s.st_size>4096 or s.st_size<1:
             raise PermissionError('key_not_regular_or_oversized')
-        if private and (s.st_uid!=os.geteuid() or s.st_mode & 0o077):
+        if os.name == 'posix' and private and (s.st_uid!=os.geteuid() or s.st_mode & 0o077):
             raise PermissionError('private_key_wrong_owner_or_permissions')
-        if not private and s.st_mode & 0o022:
+        if os.name == 'posix' and not private and s.st_mode & 0o022:
             raise PermissionError('public_key_writable_by_untrusted_party')
         return os.read(fd,4097)
     finally:os.close(fd)

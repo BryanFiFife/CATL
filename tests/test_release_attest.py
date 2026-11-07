@@ -7,6 +7,7 @@ from release_attest import keygen,sign,verify,validate_release_zip,_read_unique_
 COMMIT='a'*40
 VERSION='0.11.0rc1'
 
+@unittest.skipIf(os.name=='nt', 'Windows private-key ACL enforcement not implemented; verify-only is supported')
 class SigningTests(unittest.TestCase):
     def setUp(self):
         # Secret-file parent trust correctly rejects group-writable /tmp.
