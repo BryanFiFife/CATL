@@ -1,9 +1,10 @@
 {
   "dependency_note": "Local system pip check reports pre-existing Pillow/MoviePy mismatch unrelated to CATL; use clean GitHub CI for package checks",
-  "github_ci": "pending",
+  "github_ci": "new_run_pending_after_B108_fix",
+  "host_audit_exact_write_path_allowlist": true,
   "independent_penetration_test": false,
   "live_systemd_attestation": false,
-  "local_linux_tests_passed": 220,
+  "local_linux_tests_passed": 222,
   "production_ga_approved": false,
   "rootless_four_uid_integrations_passed": 3,
   "synthetic_recovery_rollback_detected": true,

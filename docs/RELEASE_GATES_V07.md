@@ -6,7 +6,7 @@ This document is a release acceptance record, not a claim of certification. CATL
 
 | Gate | Latest evidence | Decision |
 |---|---|---|
-| Unit, adversarial and overlay tests | 220 automated local tests; exact final CI run to be recorded in `CI_EVIDENCE_V07.md` | Verify final GitHub run |
+| Unit, adversarial and overlay tests | 222 automated local tests; exact final CI run to be recorded in `CI_EVIDENCE_V07.md` | Verify final GitHub run |
 | Four separate Linux identities | Real synthetic UID test of agent/operator/broker/backend | PASS for disposable test host |
 | Agent-owned policy integrity | Trusted file UID, parent directory, no-follow FD, 1 MiB max; adversarial test | PASS in tests |
 | Operator pause and tool disable | Revokes outstanding approvals, adds signed revocation records, detects signed-row replay | PASS in tests |

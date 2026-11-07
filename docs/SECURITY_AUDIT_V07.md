@@ -25,3 +25,7 @@ Date: 2026-11-07 · Scope: local Linux rootless trust boundary · **Internal eng
 ## Release recommendation
 
 **Do not release as a production security guarantee.** Permit evaluation only with restricted synthetic/low-impact tools and reviewed Linux identities. Complete the production gates in `RELEASE_GATES_V07.md` and obtain independent verification before the public launch.
+
+## Exact writable-path attestation (post-initial CI finding)
+
+The host-audit now accepts only the enumerated per-service state and IPC directory roots; generic write roots and sibling paths fail, even if the unit otherwise has strict sandbox properties. This closes a policy-completeness weakness and removes a Bandit temporary-directory string false positive without disabling checks. Live host attestation still remains outstanding.

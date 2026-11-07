@@ -64,15 +64,24 @@ def assess_unit(unit: str, properties: dict[str, str], expected_user: str) -> di
           'capability bounding set must be empty')
     check('ambient_capabilities_empty', properties.get('AmbientCapabilities', '') in ('', '0'),
           'ambient capabilities must be empty')
-    # A token such as 'no' or the broad root '/' must never count as a
-    # constrained writable path. Exact per-deployment roots still need review.
+    # For this specific constrained CATL systemd profile, accept ONLY the
+    # service-owned state and IPC paths.  A broad path or an unrelated path
+    # must never count as a restricted writable location. Future deployment
+    # profiles need their own reviewed allowlist, not a permissive default.
+    allowed_writable = {
+        'catl-broker': {
+            '/var/lib/catl/state', '/var/lib/catl-anchor',
+            '/run/catl-agent', '/run/catl-operator',
+        },
+        'catl-tools': {
+            '/var/lib/catl-tools/work', '/run/catl-tools',
+        },
+    }
     paths = properties.get('ReadWritePaths', '').split()
-    invalid_roots = {'/', '/var', '/var/lib', '/etc', '/tmp', '/home', '/run', '/usr'}
-    restricted_paths = bool(paths) and all(
-        part.startswith('/') and part not in invalid_roots and '..' not in part.split('/')
-        for part in paths)
+    expected_paths = allowed_writable.get(expected_user, set())
+    restricted_paths = bool(expected_paths) and set(paths) == expected_paths and len(paths) == len(expected_paths)
     check('restrict_write_locations', restricted_paths,
-          'all writable roots must be absolute, nontrivial and explicitly reviewed')
+          'writable roots must match the exact reviewed role-specific service profile')
     # Systemd reports umasks in several equivalent octal notations.
     check('restricted_umask', properties.get('UMask', '') in ('0077', '077', '0o077'),
           '0077 umask required')
