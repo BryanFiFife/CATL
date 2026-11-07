@@ -1,251 +1,79 @@
 {
-  "version": "0.5.0",
-  "files": [
-    {
-      "path": ".github/workflows/ci.yml",
-      "sha256": "3f00d817f779e383f2879422f2947839ef8653630bb62f50f1decf6bd7555a14",
-      "bytes": 1853
-    },
-    {
-      "path": ".gitignore",
-      "sha256": "6da1d231e058ed3aaac3518dff20faf1de17e8640dc003cfc4d58fc6c8b8a708",
-      "bytes": 279
-    },
-    {
-      "path": "LICENSE",
-      "sha256": "c451d5b483c2bc3cb0b451c9c6ad63b1e1de4fbe3dc7ed83fbd5290adede0ef9",
-      "bytes": 341
-    },
-    {
-      "path": "README.md",
-      "sha256": "d4fbc8fe164d3ddc34980627cf8fecae63e1e204e9efd3bc7c18a53e923c5ef6",
-      "bytes": 12406
-    },
-    {
-      "path": "SECURITY.md",
-      "sha256": "e1ada23011884fcf250ca8f229e3954af44eb70ee5e0e9e760d0124deb752c0c",
-      "bytes": 1688
-    },
-    {
-      "path": "docs/ARCHITECTURE.md",
-      "sha256": "70973f8a32a636d820646a38fe33be18da193245515f639f659048010c3c387c",
-      "bytes": 5376
-    },
-    {
-      "path": "docs/DEPLOY_ROOTLESS_LINUX.md",
-      "sha256": "a7e18dad89e2cb06b5005b079712b54731e911482255b415e0a7049cedea9df1",
-      "bytes": 6046
-    },
-    {
-      "path": "docs/INTEGRATION.md",
-      "sha256": "142be40eaf823eff888490387966f10aca89a12b47d307a80675c6780701e51c",
-      "bytes": 5336
-    },
-    {
-      "path": "docs/RELEASE_NOTES_V05.md",
-      "sha256": "4ef67c357d0ad9e650d0b576577d8b1be66fb45e328922097beea97f889dfa38",
-      "bytes": 1002
-    },
-    {
-      "path": "docs/SBOM-evaluation.json",
-      "sha256": "b7ecf6169cc9ef56509ada1d93a38d6c1f077eded460eb15413e961d027759da",
-      "bytes": 1530
-    },
-    {
-      "path": "docs/SECURITY_AUDIT_V05.md",
-      "sha256": "f2a768142121292c056fa17822f3886bcc21aeb635b0491b60e642d909b8187c",
-      "bytes": 3323
-    },
-    {
-      "path": "docs/THREAT_MODEL.md",
-      "sha256": "7ba95cdb971586b203a22e27ec253b80d58910555242067103d71eb27cda06fc",
-      "bytes": 3582
-    },
-    {
-      "path": "docs/assets/control-overlay.png",
-      "sha256": "bfcd914f212534598d38f148fd2988f7352c5536b189c1a96c0190502262caa4",
-      "bytes": 49125
-    },
-    {
-      "path": "docs/assets/overlay-preview.svg",
-      "sha256": "2afb994fd1ae2d885adcfd8be1d0b6e4ef7fa84e11ac788f109562036763e707",
-      "bytes": 3349
-    },
-    {
-      "path": "examples/make_policy.py",
-      "sha256": "362875238dff003b6ae485963f33bf1b2f0195df7d545eb4cd1300f64dd763a4",
-      "bytes": 830
-    },
-    {
-      "path": "examples/mock_server.py",
-      "sha256": "f5d96c8802fd644ab25468f1d504e52955d902d69f4e282f3bc8efbbbc460291",
-      "bytes": 2468
-    },
-    {
-      "path": "examples/policy.json",
-      "sha256": "7ddef80a8f545bdeb3a12286fc74025bcc9a6bc3bd2be84efff0c93f9c4f3204",
-      "bytes": 543
-    },
-    {
-      "path": "pyproject.toml",
-      "sha256": "df67fe60748491a283161ac36f8a426c418a1a33ca953be81efd19351326be98",
-      "bytes": 583
-    },
-    {
-      "path": "reports/rootless-e2e-v0.5.0.txt",
-      "sha256": "eb0eb64834035349bd85e5575552e27b4c56681f01f6e6104a69c15551bd1aaa",
-      "bytes": 96
-    },
-    {
-      "path": "reports/test-results-v0.5.0.json",
-      "sha256": "f993ddb42f232328f938dd4a266374e68f144b275465e583d833eabd0c5c0c8b",
-      "bytes": 474
-    },
-    {
-      "path": "reports/test-run-v0.5.0.txt",
-      "sha256": "98f05e3cee7d7755a509aa92f0ee5d09e654cc73c48cbf2f75deec7423453b86",
-      "bytes": 21475
-    },
-    {
-      "path": "src/catl/__init__.py",
-      "sha256": "5e9944118624c0ea0b9f2f80bec1f0c0a03c7ec24fc26f428d7844e2be283fa5",
-      "bytes": 85
-    },
-    {
-      "path": "src/catl/__main__.py",
-      "sha256": "79ee6f134c5c5193377cf9b189cbdcc3e2095e49ba9cec310114441c15a917c4",
-      "bytes": 47
-    },
-    {
-      "path": "src/catl/anchor.py",
-      "sha256": "cd3aec627f68dde4ba74156cca135ae28f44f6ad8d5b78bab48d82fe52ba3204",
-      "bytes": 6007
-    },
-    {
-      "path": "src/catl/broker.py",
-      "sha256": "3abcd99867d97d6855165e5828989895cad89141c15cfc13f965dda684fad20f",
-      "bytes": 14329
-    },
-    {
-      "path": "src/catl/cli.py",
-      "sha256": "36822d8467756495a9a3c64cd4722dc2a616a1017b94bb425715dde185099d79",
-      "bytes": 16809
-    },
-    {
-      "path": "src/catl/controls.py",
-      "sha256": "1ec30cef7a0532a0f817571826b6ed155beee16f7a37a89fcd9cde38920fcd1e",
-      "bytes": 1959
-    },
-    {
-      "path": "src/catl/crypto.py",
-      "sha256": "e1f3f9ecf44624183ab5b89adde4066045a9d258560eff2e831cbb8fd1cf9e38",
-      "bytes": 3380
-    },
-    {
-      "path": "src/catl/external_backend.py",
-      "sha256": "89b8001a36173c94944877cf5927e41108eb6ce87af0cc57cf24aa9fe327b827",
-      "bytes": 9162
-    },
-    {
-      "path": "src/catl/gateway.py",
-      "sha256": "1a70bc8e3bbbca061888f598a0655ca846dd20065c9c1502d7ac88e015c5e28a",
-      "bytes": 21421
-    },
-    {
-      "path": "src/catl/isolation.py",
-      "sha256": "677d426c3931df185fa6cb4b753170c16310be424314f9fc32b085d36ec37d32",
-      "bytes": 2619
-    },
-    {
-      "path": "src/catl/overlay.py",
-      "sha256": "3e56c918bb05ec778f72a6d29586d07f701b9ce969b6092b871c087b0184bbee",
-      "bytes": 13995
-    },
-    {
-      "path": "src/catl/policy.py",
-      "sha256": "32d7ad795bd73a6459f6a39363b241daa1315e6aa38454d9b8d0d044e6091c97",
-      "bytes": 6422
-    },
-    {
-      "path": "src/catl/protocol.py",
-      "sha256": "3703af0927be8e4334810cc0d4c95a4595369b3afb0dcdb991b9afe6174c911d",
-      "bytes": 3205
-    },
-    {
-      "path": "src/catl/schema.py",
-      "sha256": "49975300d38f5ca8e65fcddea82135a96d1ada7370ad1a68d66add9b0065764c",
-      "bytes": 1686
-    },
-    {
-      "path": "src/catl/store.py",
-      "sha256": "6e7de4358f3d407d2f869eb8f636a1e9a74cf278c737234ffdbaada4ed49f19b",
-      "bytes": 19081
-    },
-    {
-      "path": "src/catl/verifier.py",
-      "sha256": "263ae442a907263f0a03c6687177fc5eb88e1ea36f3a3c74000180faef2bf7a6",
-      "bytes": 5796
-    },
-    {
-      "path": "tests/integration_broker_e2e.py",
-      "sha256": "a7dc7dd94fac349a711c433e8e241f227e5606edca9664a531e4c780fcdabfd2",
-      "bytes": 5180
-    },
-    {
-      "path": "tests/integration_rootless_e2e.py",
-      "sha256": "56acb08081cd945769fbf552fc88c77a9c6a09d43b916ac4d96686fc17ecb0bb",
-      "bytes": 8333
-    },
-    {
-      "path": "tests/test_broker_anchor.py",
-      "sha256": "3aaa0d87c815a9156fb27158846bb8a65dcb8536acb561ee6978d300c5bb03b3",
-      "bytes": 12810
-    },
-    {
-      "path": "tests/test_controls_overlay.py",
-      "sha256": "938b73ca967e7a78cb255290c915eaaeaacf8cf90eafd072a61bfb06928f49c3",
-      "bytes": 17321
-    },
-    {
-      "path": "tests/test_gateway.py",
-      "sha256": "1a684c650c481d2a50275a70bea1402f4ebfaa1e8f33e72773dabfa6ddac66c1",
-      "bytes": 11962
-    },
-    {
-      "path": "tests/test_hardening.py",
-      "sha256": "fb098694859200db4711ea04987f1e21ab3ffe2ba7fee5e4bd5df53b198d0ae9",
-      "bytes": 14315
-    },
-    {
-      "path": "tests/test_modern_stdio.py",
-      "sha256": "5adf92b6bc7850827fd434b12bf6e823d6f51089c57029eeaa7b7dd93288d961",
-      "bytes": 5748
-    },
-    {
-      "path": "tests/test_operator_overlay_rpc.py",
-      "sha256": "2454855203c50e25f9fca8fa9cca1de7587df83bd914a4e8d5c07b654921d9d0",
-      "bytes": 3010
-    },
-    {
-      "path": "tests/test_policy.py",
-      "sha256": "4e38a061f6182d8b753863801bb4ec7fa17f1201ab709a2382f1603e33fde7f0",
-      "bytes": 5844
-    },
-    {
-      "path": "tests/test_rootless_security.py",
-      "sha256": "c6705fab5154ff1bd79c9f7deac3aa7c9f69e1ffba94cae37b242c6ed14e34eb",
-      "bytes": 6217
-    },
-    {
-      "path": "tests/test_static_security.py",
-      "sha256": "5985f4129f3135ab1725196e1adf57e8131e572e297a5bf46bce1c0e6e99bf26",
-      "bytes": 2281
-    },
-    {
-      "path": "tests/test_store.py",
-      "sha256": "b5b3e15e8a75aca626a6425cc672d5b7688b9f4c60e507b1b2c993f213936f8a",
-      "bytes": 5408
-    }
-  ],
-  "security_assurance": "locally regression tested; not independently penetration tested"
+  "algorithm": "sha256",
+  "files": {
+    ".github/workflows/ci.yml": "4343609c1dd952915ba4915988c7a82d795f96bf3f3ca6af95406ad5a665b2a6",
+    ".gitignore": "6da1d231e058ed3aaac3518dff20faf1de17e8640dc003cfc4d58fc6c8b8a708",
+    "LICENSE": "c451d5b483c2bc3cb0b451c9c6ad63b1e1de4fbe3dc7ed83fbd5290adede0ef9",
+    "README.md": "1c52f2ffebe79f23a6273aafad5fcafdfc5678834bf7f8cd7f893b5f8d0a9295",
+    "SECURITY.md": "e1ada23011884fcf250ca8f229e3954af44eb70ee5e0e9e760d0124deb752c0c",
+    "docs/ARCHITECTURE.md": "70973f8a32a636d820646a38fe33be18da193245515f639f659048010c3c387c",
+    "docs/CHANGES_V06.md": "9ca85ff31d8c471e9bfdee464a4727d4184426b8bf3c81a1cf01803268b6af4a",
+    "docs/DEPLOY_LINUX.md": "4e6211598f74ac6de94148ab01b430d8a4360d7d75ff9b3142086b844b989ab3",
+    "docs/DEPLOY_ROOTLESS_LINUX.md": "499ffae710340734d6e828fcdfe4fb618d2e2d9faf84e975156a0756219bbe3e",
+    "docs/INTEGRATION.md": "142be40eaf823eff888490387966f10aca89a12b47d307a80675c6780701e51c",
+    "docs/RELEASE_GATES_V06.md": "4d6cfd38cf28793f6fe76301f8c96bd21fd719ea99eb095b3e190d6fb212d41b",
+    "docs/RELEASE_NOTES.md": "2ca19adf64e0c868124b214d9417dd76266cb0086cdf0326aeed7313bcb595c3",
+    "docs/RELEASE_NOTES_V05.md": "4ef67c357d0ad9e650d0b576577d8b1be66fb45e328922097beea97f889dfa38",
+    "docs/SBOM-evaluation.json": "b7ecf6169cc9ef56509ada1d93a38d6c1f077eded460eb15413e961d027759da",
+    "docs/SECURITY_AUDIT_2026-11-06.md": "86535bc5d5c4444b965ad40eadc62aae605aadc2f678ddcf07348e3f804e0f79",
+    "docs/SECURITY_AUDIT_2026-11-07.md": "ae7afd4b268a257d2e3bd7544ff9a7a2698a88647c2828797d978a591dd06aeb",
+    "docs/SECURITY_AUDIT_V05.md": "f2a768142121292c056fa17822f3886bcc21aeb635b0491b60e642d909b8187c",
+    "docs/SECURITY_AUDIT_V06.md": "c6626a2a04c9090f436d1cd5e3ac41fc92fbb20bc756b644855f21a19c0dae85",
+    "docs/TEST_REPORT.md": "309ef8c7c9677ee6cddb536c2715aaf5a50d719ace7a241d6e4b5f422f2a2fba",
+    "docs/THREAT_MODEL.md": "7ba95cdb971586b203a22e27ec253b80d58910555242067103d71eb27cda06fc",
+    "docs/assets/control-overlay.png": "bfcd914f212534598d38f148fd2988f7352c5536b189c1a96c0190502262caa4",
+    "docs/assets/overlay-preview.svg": "2afb994fd1ae2d885adcfd8be1d0b6e4ef7fa84e11ac788f109562036763e707",
+    "examples/make_policy.py": "362875238dff003b6ae485963f33bf1b2f0195df7d545eb4cd1300f64dd763a4",
+    "examples/mock_server.py": "f5d96c8802fd644ab25468f1d504e52955d902d69f4e282f3bc8efbbbc460291",
+    "examples/policy.json": "7ddef80a8f545bdeb3a12286fc74025bcc9a6bc3bd2be84efff0c93f9c4f3204",
+    "integrations/github/catl-ci-monorepo.yml": "9b270893cddd6e3b08b51d2cdbeb2ccc0e500398c879ffb0e01cf2f3966beb27",
+    "packaging/systemd/catl-backend.service.example": "d122e9e0fc7d4f61710950495239b01d0602e0fdc490e491edd3df39e605dab2",
+    "packaging/systemd/catl-broker.service.example": "3147ab522ad3c45cae8f48745cedfa6d72ea1d95e795e058338b758fd038c3fd",
+    "pyproject.toml": "abb10dd45d9a69e33fb4b595b31f648cb4c442503c853b5c4e37d28b0e92005c",
+    "reports/broker-integration-v0.4.0.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reports/rootless-e2e-v0.5.0.txt": "eb0eb64834035349bd85e5575552e27b4c56681f01f6e6104a69c15551bd1aaa",
+    "reports/test-results-v0.5.0.json": "f993ddb42f232328f938dd4a266374e68f144b275465e583d833eabd0c5c0c8b",
+    "reports/test-results.json": "231558094759291d2853db8c5b775e4eb37c859dd9fce085d5a947525b939465",
+    "reports/test-run-raw.txt": "5d982cfa05c9a23eceeb00204532fd56e141bd5826a06ce390fa3fd164756a8b",
+    "reports/test-run-v0.4.0.txt": "198f839f6ca5cbc1e6ca5c02eca8c89e1196938cbe5781d46532737db5b441f6",
+    "reports/test-run-v0.5.0.txt": "98f05e3cee7d7755a509aa92f0ee5d09e654cc73c48cbf2f75deec7423453b86",
+    "reports/verification-v06.json": "6132e93efcc1111883d9260cfcac4c91da61806b71085f48ee9acafe15d76744",
+    "src/catl/__init__.py": "6d967dd7f07596241cb5e996178df76541e57e8f58e69edd7c4019f9712f9c0e",
+    "src/catl/__main__.py": "79ee6f134c5c5193377cf9b189cbdcc3e2095e49ba9cec310114441c15a917c4",
+    "src/catl/anchor.py": "cd3aec627f68dde4ba74156cca135ae28f44f6ad8d5b78bab48d82fe52ba3204",
+    "src/catl/broker.py": "3abcd99867d97d6855165e5828989895cad89141c15cfc13f965dda684fad20f",
+    "src/catl/cli.py": "2e1f78f4dd6d3043613b94bba3d77401a3bc245d119d140933590ce50e5eb5fb",
+    "src/catl/controls.py": "1ec30cef7a0532a0f817571826b6ed155beee16f7a37a89fcd9cde38920fcd1e",
+    "src/catl/crypto.py": "e1f3f9ecf44624183ab5b89adde4066045a9d258560eff2e831cbb8fd1cf9e38",
+    "src/catl/doctor.py": "c8ccbd75a2c73dbc72afc7281cbf054cb7bed5389eb1febcfc764477510ff928",
+    "src/catl/external_backend.py": "89b8001a36173c94944877cf5927e41108eb6ce87af0cc57cf24aa9fe327b827",
+    "src/catl/gateway.py": "267d5291fbdda86735b87567a7e755982c354508347a5c6a39373f393735dbd1",
+    "src/catl/isolation.py": "677d426c3931df185fa6cb4b753170c16310be424314f9fc32b085d36ec37d32",
+    "src/catl/overlay.py": "3e56c918bb05ec778f72a6d29586d07f701b9ce969b6092b871c087b0184bbee",
+    "src/catl/policy.py": "5c452c292c934af04e5e39fa2430b9a9d8f44f237b7c6b591b45b10fce4f0fa5",
+    "src/catl/protocol.py": "ca740d690a601f0794172c4ff95d9d22106486cb8cf46558bcf333765d394c95",
+    "src/catl/schema.py": "49975300d38f5ca8e65fcddea82135a96d1ada7370ad1a68d66add9b0065764c",
+    "src/catl/store.py": "8fa23095a2a3398734c402d865357b003cae75f76cea0ea984fa12aa39a909c5",
+    "src/catl/verifier.py": "263ae442a907263f0a03c6687177fc5eb88e1ea36f3a3c74000180faef2bf7a6",
+    "tests/integration_broker_e2e.py": "a7dc7dd94fac349a711c433e8e241f227e5606edca9664a531e4c780fcdabfd2",
+    "tests/integration_rootless_e2e.py": "56acb08081cd945769fbf552fc88c77a9c6a09d43b916ac4d96686fc17ecb0bb",
+    "tests/test_broker_anchor.py": "3aaa0d87c815a9156fb27158846bb8a65dcb8536acb561ee6978d300c5bb03b3",
+    "tests/test_controls_overlay.py": "433793edc126f823cfb1d9b28bb80d2bbf8c65434f56c63fe3f2c9e7d379f64e",
+    "tests/test_doctor.py": "343082254debc598374dab9d8b4ae2612c684e618379cea7262fe2df7edb9a76",
+    "tests/test_gateway.py": "dff97f6635ad8a487cd8f8d8e28b833dd0d89088e5d92f840913126e672e8c94",
+    "tests/test_hardening.py": "a01c519ebed8cb60aa86f0674c90af15c6fa30869be3d4274a89a43a431b50bd",
+    "tests/test_modern_stdio.py": "5adf92b6bc7850827fd434b12bf6e823d6f51089c57029eeaa7b7dd93288d961",
+    "tests/test_operator_overlay_rpc.py": "2454855203c50e25f9fca8fa9cca1de7587df83bd914a4e8d5c07b654921d9d0",
+    "tests/test_policy.py": "4e38a061f6182d8b753863801bb4ec7fa17f1201ab709a2382f1603e33fde7f0",
+    "tests/test_release_security.py": "3908b33c1d1ed3984e5b846c69706ee6d112709059985cd85081205b5bb44b22",
+    "tests/test_rootless_security.py": "c6705fab5154ff1bd79c9f7deac3aa7c9f69e1ffba94cae37b242c6ed14e34eb",
+    "tests/test_static_security.py": "5985f4129f3135ab1725196e1adf57e8131e572e297a5bf46bce1c0e6e99bf26",
+    "tests/test_store.py": "b5b3e15e8a75aca626a6425cc672d5b7688b9f4c60e507b1b2c993f213936f8a",
+    "tools/release_pack.py": "e130e6844325fa0084679e967cf4d5f2a4e141d7b3c19fbdca8fe386489b7f9b",
+    "tools/security_sanity.py": "2fdfe389b0cd622f08acebbce255ca0445e4d3394611624f469c3dda5bf596a6"
+  },
+  "name": "caledapt-agent-trust",
+  "release_type": "private-evaluation-release-candidate",
+  "signed": false,
+  "version": "0.6.0rc1"
 }

@@ -1,0 +1,32 @@
+# EVALUATION TEMPLATE. Requires manual UID/GID, directory and sandbox review.
+# Not tested under systemd in the release environment. See docs/DEPLOY_ROOTLESS_LINUX.md.
+[Unit]
+Description=CATL protected rootless Linux broker (evaluation)
+After=catl-backend.service
+Requires=catl-backend.service
+
+[Service]
+Type=simple
+User=catl-broker
+Group=catl-broker
+SupplementaryGroups=catl-agent-ipc catl-operator-ipc catl-backend-ipc
+ExecStart=/usr/local/bin/catl broker --config /etc/catl/policy.json --state-dir /var/lib/catl/state --anchor-path /var/lib/catl-anchor/head.json --agent-socket /run/catl-agent/agent.sock --operator-socket /run/catl-operator/operator.sock --agent-uid AGENT_UID --operator-uid OPERATOR_UID --agent-gid AGENT_GID --operator-gid OPERATOR_GID --backend-socket /run/catl-tools/tools.sock --backend-uid TOOLS_UID
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/catl/state /var/lib/catl-anchor /run/catl-agent /run/catl-operator
+RestrictAddressFamilies=AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+LimitNOFILE=512
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

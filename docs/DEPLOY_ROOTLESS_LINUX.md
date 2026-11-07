@@ -80,3 +80,21 @@ PYTHONPATH=src python tests/integration_rootless_e2e.py
 ```
 
 The script checks distinct peer UIDs, group-gated sockets, signed approvals, replay blocking, audit verification and backend inability to read the broker's HMAC key. It does not validate a production host's service manager, kernel LSM policy or network isolation.
+
+## 🩺 v0.6 release-candidate deployment check
+
+After provisioning the state/key, checkpoint and UIDs, run this **under `catl-broker`**:
+
+```bash
+catl doctor --config /etc/catl/policy.json \
+  --state-dir /var/lib/catl/state --anchor-path /var/lib/catl-anchor/head.json \
+  --agent-uid <agent_UID> --operator-uid <operator_UID> --backend-uid <tools_UID>
+```
+
+A nonzero exit indicates failed structural preflight. Even a zero exit retains explicit warnings about host sandboxing and human identity; `--strict` treats warnings as blockers. The diagnostic never creates a missing key or audit anchor. Back up SQLite state before running a release candidate against existing state: the state opener may perform compatible schema migration.
+
+Evaluation-only hardening templates are available at `packaging/systemd/`. They contain placeholders for numerical UIDs/GIDs, intentionally do not create local users or host ACLs, and **have not been tested on an actual production systemd host**. In particular, validate the backend's ability to operate when all IP socket families are denied. Review AppArmor/SELinux, mount/device restrictions and process capabilities separately.
+
+### v0.6 signed throttling change
+
+The existing mutable `tool_rate` table is no longer used for enforcement. Permitted tool attempts record an authenticated `rate_permit` receipt. This changes receipt counts and increases time proportional to ledger size. Never prune the signed ledger without a reviewed archive/rotation protocol that preserves the independent anchor.

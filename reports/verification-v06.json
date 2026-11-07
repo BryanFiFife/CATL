@@ -1,0 +1,24 @@
+{
+  "GitHub_actions": "not_verified",
+  "MCP_conformance": "restricted tools subset, no complete SDK certification",
+  "backend_evidence": "rootless 4-UID integration, scripted; not production host sandbox attestation",
+  "evaluated_on": "Linux / Python 3.13.5",
+  "four_uid_linux_integration": "pass",
+  "independent_penetration_test": "not_performed",
+  "local_unittest_count": 200,
+  "macos_protected_broker": "not_implemented",
+  "nonroot_doctor_integration": "pass",
+  "offline_clean_venv_install": "blocked: package dependency jsonschema==4.26.0 not available from container DNS; direct wheel CLI help works without dependency via lazy imports",
+  "performance_observation": {
+    "events": 600,
+    "interpretation": "local measurement, no scale guarantee",
+    "mean_first_100_ms": 1.796,
+    "mean_last_100_ms": 4.646
+  },
+  "static_sanity": "pass",
+  "status": "private_release_candidate_not_GA",
+  "unit_suite": "pass (Xvfb)",
+  "version": "0.6.0rc1",
+  "wheel_sha256": "9833aae27575bb9a585dc8012460a6811bcbddec996e238c2b33b2532d3f530f",
+  "windows_protected_broker": "not_implemented"
+}

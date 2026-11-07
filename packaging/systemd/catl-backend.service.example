@@ -1,0 +1,32 @@
+# EVALUATION TEMPLATE. The example denies all IP network access; narrow safely if necessary.
+# The backend is NOT inherently sandboxed by its UID. Review service restrictions.
+[Unit]
+Description=CATL restricted tool backend (evaluation)
+
+[Service]
+Type=simple
+User=catl-tools
+Group=catl-tools
+SupplementaryGroups=catl-backend-ipc
+WorkingDirectory=/var/lib/catl-tools/work
+ExecStart=/usr/local/bin/catl backend-service --socket /run/catl-tools/tools.sock --broker-uid BROKER_UID --broker-gid BACKEND_IPC_GID --backend-workdir /var/lib/catl-tools/work -- /usr/local/bin/python3 /opt/catl/tool-server.py
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/catl-tools/work /run/catl-tools
+RestrictAddressFamilies=AF_UNIX
+IPAddressDeny=any
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+LimitNOFILE=512
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target
