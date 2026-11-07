@@ -34,7 +34,7 @@ def _head(head: dict[str, Any]) -> None:
     if not isinstance(head,dict) or set(head)!={'ledger_id','sequence','head_mac'}:
         raise WitnessRejected('head_shape_invalid')
     if (not isinstance(head['ledger_id'],str) or not re.fullmatch('[a-zA-Z0-9._-]{6,64}',head['ledger_id'])
-            or type(head['sequence']) is not int or head['sequence'] < 0
+            or type(head['sequence']) is not int or not 0 <= head['sequence'] <= 2**63-1
             or not isinstance(head['head_mac'],str)
             or not (head['head_mac']=='GENESIS' or re.fullmatch('[0-9a-f]{64}',head['head_mac']))):
         raise WitnessRejected('head_fields_invalid')

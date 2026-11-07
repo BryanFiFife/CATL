@@ -299,7 +299,7 @@ CATL's native JSON decoder now rejects exponent overflow (`1e999`) and nonzero d
 
 A [separate six-workstream implementation report](docs/SIX_GATE_IMPLEMENTATION_2026-11-07.md) covers new WebAuthn assertion verification, Linux/Windows/macOS isolation proofs, explicit **modern MCP upstream tools-only mode** (`catl broker --backend-era modern`), crash-conservative provider idempotency/readback, independently signed witness receipts, an mTLS witness-service scaffold and offline SBOM validation.
 
-**Local focused tests are not full platform or live service evidence.** The six combined roadmap milestones below remain **unchecked**, including FIDO2 hardware, real AppContainer/macOS sandbox, SDK conformance, live provider readback, remote witness deployment and independent penetration testing. No running services or Hermes installation were changed.
+**96 focused local tests passed. This is not full platform or live service evidence.** The six combined roadmap milestones below remain **unchecked**, including FIDO2 hardware, real AppContainer/macOS sandbox, SDK conformance, live provider readback, remote witness deployment and independent penetration testing. No running services or Hermes installation were changed.
 
 ## 🩺 Broker preflight (Linux)
 

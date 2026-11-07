@@ -49,7 +49,7 @@ def make_handler(log: DurableWitnessLog):
             if self.path!='/v1/witness' or not self.request.getpeercert():
                 self.send_error(403);return
             length=self.headers.get('Content-Length')
-            if not length or not length.isdigit() or not 1<=int(length)<=4096:
+            if not length or len(length)>4 or not length.isdigit() or not 1<=int(length)<=4096:
                 self.send_error(413);return
             if self.headers.get('Content-Type','').split(';')[0].lower()!='application/json':
                 self.send_error(415);return

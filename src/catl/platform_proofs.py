@@ -90,6 +90,8 @@ def protected_unix_socket_path(path: Path, *, expected_owner: int) -> None:
             raise PlatformProofError("socket_ancestor_symlink")
         if node != path and not stat.S_ISDIR(st.st_mode):
             raise PlatformProofError("socket_ancestor_not_directory")
+        if node != path and st.st_uid not in (expected_owner, 0):
+            raise PlatformProofError("socket_ancestor_untrusted_owner")
         if node not in (Path('/'),Path('/tmp'),Path('/var'),Path('/private'),Path('/private/tmp')):
             if st.st_mode & (stat.S_IWOTH | stat.S_IWGRP):
                 raise PlatformProofError("socket_ancestor_writable")
@@ -169,7 +171,12 @@ def windows_named_pipe_acl_proof(pipe_name:str, *, exact_allowed_sids:set[str]) 
         for idx in range(dacl.GetAceCount()):
             header,access,sid = dacl.GetAce(idx)
             sid_text=win32security.ConvertSidToStringSid(sid)
-            if header[0] in (win32security.ACCESS_ALLOWED_ACE_TYPE,):
+            if header[0] not in (win32security.ACCESS_ALLOWED_ACE_TYPE,
+                                 win32security.ACCESS_DENIED_ACE_TYPE):
+                raise PlatformProofError('pipe_unreviewed_ace_type')
+            if header[1] & win32security.INHERITED_ACE:
+                raise PlatformProofError('pipe_mutable_inherited_acl')
+            if header[0] == win32security.ACCESS_ALLOWED_ACE_TYPE:
                 if sid_text not in exact_allowed_sids:
                     raise PlatformProofError('pipe_broad_or_unknown_ace')
                 seen.add(sid_text)

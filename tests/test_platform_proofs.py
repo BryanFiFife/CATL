@@ -54,3 +54,34 @@ class TestHostGates(unittest.TestCase):
   if sys.platform!='linux' or os.geteuid()!=0:self.skipTest('only meaningful in this root Linux test container')
   with self.assertRaises(PlatformProofError):
    linux_self_confinement_proof(cgroup_memory='786432000',cgroup_pids='64')
+
+class TestWindowsACLEntryTypes(unittest.TestCase):
+ def _fake(self,ace):
+  import types
+  fake=types.SimpleNamespace(
+   DACL_SECURITY_INFORMATION=4,OWNER_SECURITY_INFORMATION=1,SE_FILE_OBJECT=1,
+   ACCESS_ALLOWED_ACE_TYPE=0,ACCESS_DENIED_ACE_TYPE=1,INHERITED_ACE=0x10)
+  class DACL:
+   def GetAceCount(self):return 1
+   def GetAce(self,i):return ace
+  class Descriptor:
+   def GetSecurityDescriptorDacl(self):return DACL()
+  fake.GetNamedSecurityInfo=lambda *args:Descriptor()
+  fake.ConvertSidToStringSid=lambda x:x
+  return fake
+ def check(self,ace):
+  from catl.platform_proofs import windows_named_pipe_acl_proof
+  import types
+  with patch('catl.platform_proofs.sys.platform','win32'),patch.dict('sys.modules',{'win32security':self._fake(ace)}):
+   return windows_named_pipe_acl_proof('\\\\.\\pipe\\CATL-Server',exact_allowed_sids={'S-1-5-18'})
+ def test_allowed_explicit_ace(self):
+  self.assertTrue(self.check(((0,0),0x10000000,'S-1-5-18'))['named_pipe_acl_verified'])
+ def test_unknown_object_ace_denied(self):
+  with self.assertRaisesRegex(PlatformProofError,'unreviewed_ace_type'):
+   self.check(((5,0),0x10000000,'S-1-5-18'))
+ def test_inherited_allow_ace_denied(self):
+  with self.assertRaisesRegex(PlatformProofError,'inherited'):
+   self.check(((0,0x10),0x10000000,'S-1-5-18'))
+ def test_broad_ace_denied(self):
+  with self.assertRaisesRegex(PlatformProofError,'broad'):
+   self.check(((0,0),0x10000000,'S-1-1-0'))

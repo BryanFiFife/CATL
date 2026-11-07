@@ -71,3 +71,11 @@ class TestWitnessIntegration(unittest.TestCase):
   from catl.witness_protocol import https_witness_transport
   import ssl
   with self.assertRaises(WitnessRejected):https_witness_transport('http://local/submit',ssl_context=ssl.create_default_context())
+
+class TestWitnessSequenceBounds(unittest.TestCase):
+ def test_sqlite_sequence_overflow_rejected_before_storage(self):
+  from catl.witness_protocol import witness_sign_head
+  key=Ed25519PrivateKey.generate()
+  for seq in (-1, 2**63, 10**200):
+   with self.subTest(seq=str(seq)[:20]),self.assertRaises(WitnessRejected):
+    witness_sign_head(key,{'ledger_id':'ledger-abc','sequence':seq,'head_mac':'a'*64})
