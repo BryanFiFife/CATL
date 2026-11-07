@@ -246,6 +246,9 @@ CATL is designed to complement rather than replace [AgentInterdict](https://gith
 
 ## 🗺️ Roadmap
 
+**Status: private Linux v0.11 release candidate, not production GA.** `[x]` means the scoped implementation and internal tests exist; it does not imply independent security certification. Combined milestones stay unchecked until **all** requirements are met. See [roadmap status and release gates](docs/ROADMAP_STATUS_2026-11-07.md).
+
+
 - [x] ✅ Deterministic policy + schema pinning
 - [x] ✅ Human approval with replay protection
 - [x] ✅ Keyless Linux agent shim and UID-authenticated operator channel
@@ -253,12 +256,12 @@ CATL is designed to complement rather than replace [AgentInterdict](https://gith
 - [x] ✅ Desktop overlay with functional toggles and approval queue
 - [x] ✅ Dedicated non-root broker with independent backend and kernel UID-bound sockets
 - [x] 🔐 One-use signed operator grants and Pause/dispatch ordering tests (software key only)
-- [ ] 🔐 Hardware-backed user-presence signing and hardened OS service profiles, capabilities, cgroups and egress restrictions
+- [ ] 🔐 Hardware-backed user-presence signing and production-verified Linux service isolation (systemd/LSM, capabilities, cgroups and egress restrictions). **PARTIAL:** templates and audit code exist; real protected-host proof remains open.
 - [ ] 🪟 Windows AppContainer/restricted-token + named-pipe ACL deployment, real Windows security results
 - [ ] 🍎 macOS sandbox and peer-authenticated UNIX socket support
-- [ ] 🌐 Full MCP current/legacy interoperability, modern upstream backend and SDK conformance
-- [ ] 🧾 Remote API/email/payment read-after-write and idempotent reconciliation
-- [ ] 🏛️ Remote/hardware-backed audit anchors, signed reproducible releases, SBOM review and external penetration tests
+- [ ] 🌐 Full MCP current/legacy interoperability, modern upstream backend and SDK conformance. **PARTIAL:** a tool-only stdio subset is supported.
+- [ ] 🧾 Remote API/email/payment read-after-write and idempotent reconciliation. **PARTIAL:** local postconditions and uncertain-action quarantine exist; provider-side read-back does not.
+- [ ] 🏛️ Remote/hardware-backed audit anchors, signed reproducible releases, SBOM review and external penetration tests. **PARTIAL:** local keyed checkpoint, hash-only release tooling and evaluation SBOM exist; witness, release signature and external pentest do not.
 
 ## 🩺 Broker preflight (Linux)
 

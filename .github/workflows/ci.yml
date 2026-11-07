@@ -1,5 +1,7 @@
 name: CATL security tests
-on: [push, pull_request]
+# Manual execution only: GitHub Actions minutes must not be consumed automatically.
+# Owner explicitly launches runs from Actions > CATL security tests > Run workflow.
+on: [workflow_dispatch]
 permissions:
   contents: read
 concurrency:
