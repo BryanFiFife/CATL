@@ -23,7 +23,7 @@ A checked feature is supported by code and internal tests, **not** an independen
 | 🍎 macOS protected mode | Portable policy components | Authenticated peer sockets, macOS sandbox and host tests |
 | 🌐 MCP full interoperability | Legacy plus modern tool-only stdio subset | Current full advertised SDK conformance, modern upstream backend, remainder of protocol |
 | 🧾 External action correctness | Local file postconditions, uncertain-action quarantine | Remote read-after-write and idempotent reconciliation of real email, API or payment |
-| 🏛️ Independent assurance and provenance | Local checkpoint, deterministic hash tooling, evaluation SBOM | Off-host/hardware witness, signed artifacts/attestations, SBOM validation, independent pentest |
+| 🏛️ Independent assurance and provenance | Local checkpoint, deterministic hash tooling, tested software-key release attestations, evaluation SBOM | Off-host/hardware witness, signed artifacts/attestations, SBOM validation, independent pentest |
 
 ## Priority order
 
@@ -42,3 +42,7 @@ A checked feature is supported by code and internal tests, **not** an independen
 **GA blockers:** live Hermes E2E in a restricted profile, genuine protected host tests, independent pentest, hardware user presence, off-host audit witness, remote external-action verification and signed provenance. Do not promote this candidate to production or public GA.
 
 References: [production acceptance](PRODUCTION_ACCEPTANCE_V09.md), [signed operator model](OPERATOR_SIGNING_V011.md), [Hermes evaluation](HERMES_EVALUATION.md), [security review scope](INDEPENDENT_REVIEW_SCOPE_V08.md).
+
+## Signed artifact incremental milestone (7 November 2026)
+
+Added `tools/release_attest.py`, its isolated red-team regression suite and `docs/RELEASE_ATTESTATIONS.md`. An operator-owned **software** Ed25519 key signs the exact ZIP hash and manifest/source-commit claim. The verifier checks the full archive against its internal manifest and an **independently pinned** public key fingerprint. The claimed source commit is an assertion by the signing operator, **not cryptographically proven source-to-artifact correspondence**. No hardware user-presence, independent witness or external pentest is claimed. The combined roadmap milestone remains unchecked.

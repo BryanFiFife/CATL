@@ -261,7 +261,11 @@ CATL is designed to complement rather than replace [AgentInterdict](https://gith
 - [ ] 🍎 macOS sandbox and peer-authenticated UNIX socket support
 - [ ] 🌐 Full MCP current/legacy interoperability, modern upstream backend and SDK conformance. **PARTIAL:** a tool-only stdio subset is supported.
 - [ ] 🧾 Remote API/email/payment read-after-write and idempotent reconciliation. **PARTIAL:** local postconditions and uncertain-action quarantine exist; provider-side read-back does not.
-- [ ] 🏛️ Remote/hardware-backed audit anchors, signed reproducible releases, SBOM review and external penetration tests. **PARTIAL:** local keyed checkpoint, hash-only release tooling and evaluation SBOM exist; witness, release signature and external pentest do not.
+- [ ] 🏛️ Remote/hardware-backed audit anchors, signed reproducible releases, SBOM review and external penetration tests. **PARTIAL:** local keyed checkpoint, deterministic hashes, tested **software** Ed25519 artifact attestations and evaluation SBOM exist; independent witness, hardware-backed provenance and external pentest do not.
+
+### 🔏 Signed release verification (software-key evaluation)
+
+CATL now includes [a detached Ed25519 release attester](docs/RELEASE_ATTESTATIONS.md) with adversarial ZIP/file-set tests and independently pinned public-key fingerprints. **This is not a hardware-backed signature, signed build provenance or independent security certification.** The combined release-assurance roadmap milestone remains open.
 
 ## 🩺 Broker preflight (Linux)
 
