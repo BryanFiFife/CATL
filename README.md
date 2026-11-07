@@ -5,12 +5,12 @@
 
 **Local-first · Harness-independent · Default-deny · Human-controlled**
 
-![Release](https://img.shields.io/badge/release-v0.8.0rc1-7c3aed?style=for-the-badge)
-![Tests](https://img.shields.io/badge/local_tests-234_passed-16a34a?style=for-the-badge)
+![Release](https://img.shields.io/badge/release-v0.9.0rc1-7c3aed?style=for-the-badge)
+![Tests](https://img.shields.io/badge/local_tests-249_passed-16a34a?style=for-the-badge)
 ![Broker](https://img.shields.io/badge/Linux_broker-rootless_UID_auth-087f8c?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-tool_subset-2563eb?style=for-the-badge)
 ![Security](https://img.shields.io/badge/default-DENY-dc2626?style=for-the-badge)
-[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.8.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
+[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.9.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)
 ![Offline](https://img.shields.io/badge/offline-first-0f766e)
@@ -48,22 +48,45 @@ flowchart TD
   R --> S[✅ Result / ⚠️ uncertain / ❌ failure]
 ```
 
-## 🧪 Release candidate: v0.8.0rc1
+## 🧪 Release candidate: v0.9.0rc1
 
 **Candidate status: not yet general availability.** Windows protected process isolation,
 independent pen testing, full Windows protected execution, full modern MCP conformance and remote
 side-effect verification remain unpassed release gates. See
-[release gates](docs/PRODUCTION_ACCEPTANCE_V08.md) and [security review](docs/SECURITY_AUDIT_V07.md).
+[release gates](docs/PRODUCTION_ACCEPTANCE_V09.md) and [security review](docs/SECURITY_AUDIT_V07.md).
 
 **Previously in v0.7:** hardened policy file ownership, immediate approval revocation when the operator disables a safety feature, and fail-closed validation of untrusted tool replies. The current 2026 MCP `_meta` envelope is checked for the supported stdio subset. `catl host-audit` provides read-only checks of the live Linux systemd service profile; a separate recovery drill proves that database-only rollback is rejected in a disposable environment. [Full notes](docs/RELEASE_NOTES_V07.md).
 
-## 🔐 New in v0.8: Pinned output-contract firewall
+## 🔐 Previously in v0.8: Pinned output-contract firewall
 
 CATL now rejects ambiguous MCP result kinds (including `input_required`) as **uncertain, not completed**. If a pinned tool definition declares `outputSchema`, the downstream server's `structuredContent` must match that locally validated JSON Schema before the caller receives a success. Remote `$ref` loading is refused. The original tool's potential side effect is recorded, and CATL **does not automatically retry** a call whose result was unverified.
 
 This is a narrower, testable guarantee—not proof that the external system actually changed correctly or that prompt injection can never occur. See [the v0.8 acceptance checklist](docs/PRODUCTION_ACCEPTANCE_V08.md).
 
-## ✨ What's in v0.8.0rc1?
+## 🚨 New in v0.9: Durable incident quarantine — no blind replay
+
+CATL now records a **unique action ID before dispatch**. If a backend crashes, times out,
+returns an error or invalid data, or fails independent file verification, CATL places
+that tool into an **audit-backed quarantine**. Restarting CATL, re-enabling the ordinary
+tool switch or changing the arguments **does not clear this quarantine**. Unexpected
+shutdown after the intent receipt but before a terminal result is likewise treated
+as an unresolved action. Earlier, uncorrelated legacy receipts are conservatively
+migrated; old uncertain results can require explicit reconciliation.
+
+The minimisable operator panel now shows **⚠️ Uncertain Actions**. An operator can
+clear an incident *only* through the separate protected operator channel, providing
+an external read-back or incident-ticket reference (e.g., `ticket:payment-reviewed-023`)
+and an explicit confirmation. That reference is a **human attestation**, not proof
+CATL obtained from the external service. The agent cannot clear incidents through
+the MCP tool channel. Resolving an incident **does not replay** its original action.
+
+**Important:** successful responses without an independent postcondition remain
+**backend-reported**, not proven external success. A real production deployment
+must still add tool-specific read-after-write verification and independently tested
+OS confinement. See [incident runbook](docs/INCIDENT_RECOVERY_V09.md) and
+[release gates](docs/PRODUCTION_ACCEPTANCE_V09.md).
+
+## ✨ What's in v0.9.0rc1?
 
 | Capability | Evidence / limits |
 |---|---|
@@ -73,6 +96,7 @@ This is a narrower, testable guarantee—not proof that the external system actu
 | 🛑 Minimisable always-on-top operator overlay | Graphical tests on virtual Linux display |
 | 🔐 Distinct Linux agent and operator sockets | Kernel `SO_PEERCRED` validates both configured UIDs |
 | 🗝️ Keyless agent shim and broker-controlled desktop client | Agent cannot request operator operations through its MCP socket |
+| 🚨 **New: crash-persistent uncertain-action quarantine** | No automatic retry; only protected operator acknowledgement clears it |
 | 🧾 Independent audit checkpoint | Detects DB-only rollback/truncation; deliberately fails closed after crash gaps |
 | 🧷 Signed control/approval-row replay fences | Control and consumed-approval receipt history checked |
 | 🐧 **New: non-root broker and separately supervised tool backend** | Real four-UID test with separate IPC groups and peer UID enforcement |
@@ -98,9 +122,9 @@ Never arm high-impact external-effect tools solely because these checks pass. An
 
 ![Tested CATL desktop overlay](docs/assets/control-overlay.png)
 
-*Actual desktop test screenshot (originally captured in v0.3); the current overlay communicates over the protected operator socket without opening the signing key.*
+*Actual v0.9 desktop screenshot with **synthetic demonstration state**, showing a quarantined tool. The protected overlay communicates over the operator socket without opening the broker signing key.*
 
-The panel allows users to **pause/resume execution, enable or disable approvals, verification and audit pathways, toggle each pinned tool, bulk-toggle tools, and approve or reject precise actions**. Disabling verification, approvals or audit never creates an unsafe bypass: dependent calls stop instead. The window can minimise to the taskbar or collapse to a compact view.
+The panel allows users to **pause/resume execution, enable or disable approvals, verification and audit pathways, toggle each pinned tool, bulk-toggle tools, approve or reject precise actions, and inspect/reconcile quarantined actions**. Disabling verification, approvals or audit never creates an unsafe bypass: dependent calls stop instead. The window can minimise to the taskbar or collapse to a compact view.
 
 **Secure deployment:** `catl overlay --operator-socket /run/catl/operator.sock`. The GUI must run as the *trusted operator OS identity*, not as the agent. The legacy direct-state interface remains for explicitly flagged **demonstrations only**.
 

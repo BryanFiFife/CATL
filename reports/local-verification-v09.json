@@ -1,0 +1,29 @@
+{
+  "artifact": "CATL v0.9.0rc1 private Linux incident-quarantine candidate",
+  "local_full_suite": {
+    "tests": 249,
+    "failures": 0,
+    "errors": 0,
+    "host": "Linux, Python 3.13, Xvfb",
+    "source": "reports/test-run-v0.9.0rc1.txt"
+  },
+  "rootless_four_uid_e2e": "PASS",
+  "static_safety": "PASS",
+  "synthetic_database_rollback_drill": "PASS",
+  "synthetic_uncertain_dispatch_drill": "PASS",
+  "gui_scrollability_and_quarantine_tests": "PASS",
+  "production_general_availability": false,
+  "open_gates": [
+    "real-host containment assessment",
+    "independent penetration test",
+    "independent human identity",
+    "external-effect reconciliation",
+    "signed/witnessed release",
+    "official MCP conformance",
+    "production retention and capacity"
+  ],
+  "notes": [
+    "Historic action receipts lacking action IDs are conservatively reconciled; migration may quarantine older tools.",
+    "HMAC and local checkpoint alone do not protect against full host compromise."
+  ]
+}

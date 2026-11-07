@@ -32,9 +32,10 @@ FEATURES = (
 class OperatorOverlay:
     def __init__(self, root, state: State, policy: Policy, *, topmost: bool = True):
         import tkinter as tk
-        from tkinter import messagebox
+        from tkinter import messagebox, simpledialog
         self.tk = tk
         self.messagebox = messagebox
+        self.simpledialog = simpledialog
         self.root = root
         self.state = state
         self.policy = policy
@@ -72,9 +73,23 @@ class OperatorOverlay:
                   bg="#1b6157", fg="white", relief="flat", padx=12, pady=8).pack(side="left", fill="x", expand=True)
         self.body = tk.Frame(self._container, bg=BG)
         self.body.pack(fill="both", expand=True)
-        self._heading(self.body, "SECURITY FEATURES")
+        # All sections must remain accessible on short desktop displays.
+        # Previous fixed-height layout shrank the approvals queue to ~3px.
+        self.body_canvas = tk.Canvas(self.body, bg=BG, highlightthickness=0)
+        self.body_scrollbar = tk.Scrollbar(self.body, orient="vertical",
+                                           command=self.body_canvas.yview)
+        self.body_canvas.configure(yscrollcommand=self.body_scrollbar.set)
+        self.body_scrollbar.pack(side="right", fill="y")
+        self.body_canvas.pack(side="left", fill="both", expand=True)
+        self.content = tk.Frame(self.body_canvas, bg=BG)
+        content_id = self.body_canvas.create_window((0, 0), window=self.content, anchor="nw")
+        self.content.bind("<Configure>", lambda _ev: self.body_canvas.configure(
+            scrollregion=self.body_canvas.bbox("all")))
+        self.body_canvas.bind("<Configure>", lambda ev: self.body_canvas.itemconfigure(
+            content_id, width=ev.width))
+        self._heading(self.content, "SECURITY FEATURES")
         self.feature_vars: dict[str, Any] = {}
-        feature_frame = tk.Frame(self.body, bg=PANEL, padx=12, pady=8)
+        feature_frame = tk.Frame(self.content, bg=PANEL, padx=12, pady=8)
         feature_frame.pack(fill="x", padx=15)
         for name, title, description in FEATURES:
             group = tk.Frame(feature_frame, bg=PANEL)
@@ -86,8 +101,8 @@ class OperatorOverlay:
                            highlightthickness=0, font=("Segoe UI", 10, "bold")).pack(anchor="w")
             tk.Label(group, text=description, bg=PANEL, fg=MUTED,
                      font=("Segoe UI", 9)).pack(anchor="w", padx=(26, 0))
-        self._heading(self.body, "PER-TOOL CONTROLS")
-        tool_shell = tk.Frame(self.body, bg=PANEL)
+        self._heading(self.content, "PER-TOOL CONTROLS")
+        tool_shell = tk.Frame(self.content, bg=PANEL)
         tool_shell.pack(fill="x", padx=15)
         canvas = tk.Canvas(tool_shell, bg=PANEL, height=140, highlightthickness=0)
         scroll = tk.Scrollbar(tool_shell, orient="vertical", command=canvas.yview)
@@ -109,14 +124,25 @@ class OperatorOverlay:
                 font=("Consolas", 10)).pack(anchor="w", padx=10, pady=4)
         if not policy.tool_pins:
             tk.Label(tool_wrap,text="No pinned tools in the policy",bg=PANEL, fg=MUTED).pack(padx=12,pady=7)
-        tools_buttons = tk.Frame(self.body, bg=BG)
+        tools_buttons = tk.Frame(self.content, bg=BG)
         tools_buttons.pack(fill="x",padx=15,pady=4)
         tk.Button(tools_buttons,text="Disable all tools",bg=BUTTON,fg=TEXT,relief="flat",
                   command=lambda:self.toggle_all_tools(False)).pack(side="left",fill="x",expand=True,padx=(0,5))
         tk.Button(tools_buttons,text="Enable pinned tools",bg=BUTTON,fg=TEXT,relief="flat",
                   command=lambda:self.toggle_all_tools(True)).pack(side="left",fill="x",expand=True)
-        self._heading(self.body, "HUMAN APPROVAL QUEUE")
-        queue_frame = tk.Frame(self.body, bg=PANEL, padx=8, pady=8)
+        self._heading(self.content, "⚠️  QUARANTINED / UNCERTAIN ACTIONS")
+        incident_frame = tk.Frame(self.content, bg=PANEL, padx=8, pady=7)
+        incident_frame.pack(fill="x", padx=15, pady=(0, 5))
+        self.incident_list = tk.Listbox(incident_frame, height=3, bg=BG, fg=RED,
+            selectbackground="#75404b", selectforeground=TEXT, borderwidth=0,
+            highlightthickness=0, font=("Consolas", 9))
+        self.incident_list.pack(fill="x")
+        tk.Button(incident_frame, text="🔎  Resolve selected after checking external effect",
+                  command=self.reconcile_selected, bg=BUTTON, fg=TEXT, relief="flat",
+                  padx=9, pady=5).pack(fill="x", pady=(5,0))
+        self._incidents: list[dict[str, Any]] = []
+        self._heading(self.content, "HUMAN APPROVAL QUEUE")
+        queue_frame = tk.Frame(self.content, bg=PANEL, padx=8, pady=8)
         queue_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
         self.pending = tk.Listbox(queue_frame, height=5, bg=BG, fg=TEXT,
             selectbackground="#246c60", selectforeground=TEXT, borderwidth=0, highlightthickness=0,
@@ -133,7 +159,7 @@ class OperatorOverlay:
                   bg="#1a6358", fg=TEXT, relief="flat", padx=9, pady=6).pack(side="left", fill="x", expand=True, padx=(0, 6))
         tk.Button(approve_row, text="✕  Reject selected", command=lambda: self.decide_selected(False),
                   bg="#743d4b", fg=TEXT, relief="flat", padx=9, pady=6).pack(side="left", fill="x", expand=True)
-        foot = tk.Label(self.body,
+        foot = tk.Label(self.content,
             text="LOCAL ONLY · NO NETWORK · Missing/tampered controls fail closed",
             bg=BG, fg=MUTED, font=("Segoe UI", 8), wraplength=430)
         foot.pack(pady=(0, 8))
@@ -172,6 +198,33 @@ class OperatorOverlay:
             self.state.set_all_tools(enabled, self.actor, set(self.policy.tool_pins))
         except (ValueError, PermissionError, OSError) as exc:
             self.messagebox.showerror("Tool update blocked", f"{type(exc).__name__}: {exc}")
+        self.refresh()
+
+    def reconcile_selected(self) -> None:
+        selection = self.incident_list.curselection()
+        if not selection or selection[0] >= len(self._incidents):
+            self.messagebox.showinfo("Select incident", "Choose an uncertain action first.")
+            return
+        incident = self._incidents[selection[0]]
+        reference = self.simpledialog.askstring("External evidence required",
+            "Enter ticket:, readback: or incident: reference (no spaces/credentials).\n"
+            "CATL cannot automatically prove the external effect.", parent=self.root)
+        if not reference:
+            return
+        if not self.messagebox.askyesno("Confirm manual reconciliation",
+                "Only continue after checking the external system yourself.\n\n"
+                f"Tool: {incident['tool']}\nAction: {incident['action_id']}\n"
+                f"Status: {incident['status']}\nEvidence: {reference}\n\n"
+                "This allows future actions; it NEVER retries the previous action.",
+                default="no"):
+            return
+        try:
+            accepted = self.state.reconcile_incident(incident['action_id'], self.actor,
+                reference, "I_HAVE_RECONCILED_THE_EXTERNAL_EFFECT")
+            if not accepted:
+                self.messagebox.showwarning("No longer pending", "The incident was already resolved.")
+        except (ValueError, PermissionError, OSError) as exc:
+            self.messagebox.showerror("Reconciliation blocked", f"{type(exc).__name__}: {exc}")
         self.refresh()
 
     def _selection(self) -> dict[str, Any] | None:
@@ -215,10 +268,20 @@ class OperatorOverlay:
             for name, var in self.feature_vars.items():
                 var.set(controls[name])
             disabled = set(controls["disabled_tools"])
+            previous = {item['action_id'] for item in self._incidents}
+            self._incidents = self.state.open_incidents()
+            quarantined = {item['tool'] for item in self._incidents}
+            self.incident_list.delete(0, self.tk.END)
+            for item in self._incidents:
+                self.incident_list.insert(self.tk.END,
+                    f"⛔ {item['tool']} · {item['status']} · {item['action_id'][:8]}")
             for name, var in self.tool_vars.items():
-                var.set(name not in disabled)
+                var.set(name not in disabled and name not in quarantined)
             active = controls["gateway_enabled"] and controls["audit_enabled"]
-            self.status_var.set("● ARMED — permitted calls may execute" if active else "⛔ PAUSED — new tool calls blocked")
+            status = ("● ARMED — permitted calls may execute" if active else "⛔ PAUSED — new tool calls blocked")
+            if self._incidents:
+                status += f"  |  {len(self._incidents)} ⚠️ quarantined"
+            self.status_var.set(status)
             self.status.configure(fg=ACCENT if active else RED)
             selection = self._selection()
             selected_id = selection["id"] if selection else None

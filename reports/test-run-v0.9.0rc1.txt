@@ -1,0 +1,55 @@
+/usr/lib/python3.13/tkinter/__init__.py:4982: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4386d030>
+  __all__ = [name for name, obj in globals().items()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/tkinter/__init__.py:4982: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4386c130>
+  __all__ = [name for name, obj in globals().items()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/tkinter/__init__.py:4982: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4386c220>
+  __all__ = [name for name, obj in globals().items()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/tkinter/__init__.py:4982: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4386c310>
+  __all__ = [name for name, obj in globals().items()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/tkinter/__init__.py:4982: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4386c400>
+  __all__ = [name for name, obj in globals().items()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/tkinter/__init__.py:4982: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4386c8b0>
+  __all__ = [name for name, obj in globals().items()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/tkinter/__init__.py:4982: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4386c9a0>
+  __all__ = [name for name, obj in globals().items()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f43982e30>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f44819990>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f439814e0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f43983790>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f43983a60>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4cd4fc40>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4cd4f6a0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4cd4fd30>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4cd4f3d0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/unittest/mock.py:2247: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8f4cd4f5b0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 249 tests in 51.385s
+
+OK

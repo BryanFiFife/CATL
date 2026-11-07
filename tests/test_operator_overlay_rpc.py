@@ -14,12 +14,19 @@ class FakeOperatorClient:
                   "verification_enabled":True, "audit_enabled":True, "disabled_tools": []}
         self.calls=[]
         self.requests=[]
+        self.incidents=[]
     def status(self):
         return {"controls":dict(self.doc),"tools":["echo_safe","send_message"]}
     def controls(self):
         return dict(self.doc)
     def list_pending(self):
         return list(self.requests)
+    def open_incidents(self):
+        return list(self.incidents)
+    def reconcile_incident(self,action_id,actor,reference,acknowledgement):
+        self.calls.append(('reconcile',action_id,reference))
+        self.incidents=[x for x in self.incidents if x['action_id'] != action_id]
+        return True
     def set_feature(self,name,on,actor):
         self.calls.append(("feature",name,on))
         self.doc[name]=on
@@ -64,6 +71,23 @@ class TestBrokerOverlayWindow(unittest.TestCase):
         self.widget.toggle_tool('send_message',False)
         self.assertIn(('tool','send_message',False),self.client.calls)
         self.assertFalse(self.widget.tool_vars['send_message'].get())
+
+    def test_quarantine_cannot_be_cleared_by_toggle(self):
+        self.client.incidents=[{'action_id':'a'*32,'tool':'send_message',
+                              'status':'dispatch_outcome_unknown','binding':'B','at':1}]
+        self.widget.refresh()
+        self.assertFalse(self.widget.tool_vars['send_message'].get())
+        self.widget.toggle_tool('send_message',True)
+        self.assertFalse(self.widget.tool_vars['send_message'].get())
+        self.assertEqual(self.widget.incident_list.size(), 1)
+
+    def test_all_sections_scroll_without_squashing_approval_queue(self):
+        self.root.update_idletasks()
+        self.assertGreaterEqual(self.widget.pending.winfo_height(), 30)
+        self.assertGreater(self.widget.content.winfo_height(), self.widget.body_canvas.winfo_height())
+        self.widget.body_canvas.yview_moveto(1)
+        self.root.update_idletasks()
+        self.assertGreater(float(self.widget.body_canvas.yview()[0]), 0)
 
     def test_no_direct_state_or_hmac_key_owned_by_gui(self):
         self.assertIs(self.widget.state,self.client)

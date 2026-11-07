@@ -135,6 +135,11 @@ class BrokerServer:
             return {"requests": self.state.list_pending()}
         if name == "verify":
             return self.state.verify()
+        if name == "incidents":
+            return {"incidents": self.state.open_incidents()}
+        if name == "reconcile_incident":
+            return {"accepted": self.state.reconcile_incident(
+                msg.get("action_id"), actor, msg.get("reference"), msg.get("acknowledgement"))}
         if name == "set_feature":
             return {"controls": self.state.set_feature(msg.get("feature"), msg.get("enabled"), actor)}
         if name == "set_tool":
@@ -279,6 +284,14 @@ class OperatorClient:
 
     def verify(self) -> dict[str, Any]:
         return self._rpc({"op": "verify"})
+
+    def open_incidents(self) -> list[dict[str, Any]]:
+        return self._rpc({"op": "incidents"})["incidents"]
+
+    def reconcile_incident(self, action_id: str, actor: str, reference: str,
+                           acknowledgement: str) -> bool:
+        return self._rpc({"op": "reconcile_incident", "action_id": action_id,
+                          "reference": reference, "acknowledgement": acknowledgement})["accepted"]
 
     def set_feature(self, name: str, enabled: bool, _actor: str) -> dict[str, Any]:
         return self._rpc({"op": "set_feature", "feature": name, "enabled": enabled})["controls"]

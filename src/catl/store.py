@@ -4,6 +4,8 @@ HMAC detects offline tampering when the key is protected; no external anchoring 
 """
 from __future__ import annotations
 import hmac
+import hashlib
+import re
 import json
 import os
 import stat
@@ -281,6 +283,119 @@ class State:
                                  "agent_id": agent, "tool": tool, "window": window})
             return True
 
+
+
+    # Action uncertainty is DERIVED FROM THE KEYED RECEIPT LEDGER, not an
+    # editable counter/table. This also catches a crash after dispatch_intent
+    # and before a terminal receipt. Operators cannot bypass this by toggling
+    # a tool back on in the desktop overlay.
+    _TERMINAL_OUTCOMES = frozenset({
+        "backend_reported_result", "backend_reported_error", "backend_rpc_error",
+        "invalid_backend_result_side_effect_possible", "postcondition_failed_side_effect_possible",
+    })
+
+    def _incidents_tx(self, db: sqlite3.Connection) -> dict[str, dict[str, Any]]:
+        actions: dict[str, dict[str, Any]] = {}
+        resolved: set[str] = set()
+        legacy_pending: dict[tuple[str, Any], list[str]] = {}
+        for (seq, body) in db.execute("SELECT seq,body FROM receipts ORDER BY seq"):
+            event = json.loads(body)
+            if not isinstance(event, dict):
+                raise PermissionError("action_receipt_not_object")
+            outcome = event.get("outcome")
+            action_id = event.get("action_id")
+            if action_id is None:
+                # Conservative migration: pre-v0.9 receipts cannot be uniquely
+                # correlated by action ID. Pair serial legacy intents/outcomes
+                # using tool+binding and quarantine any unmatched intent or
+                # uncertain terminal. Never silently drop an old error.
+                tool = event.get("tool")
+                binding = event.get("binding")
+                if not isinstance(tool, str) or not tool:
+                    continue
+                key = (tool, binding)
+                synthetic_id = hashlib.sha256(f"CATL/LEGACY/v1/{seq}".encode()).hexdigest()[:32]
+                if outcome == "dispatch_intent":
+                    action_id = synthetic_id
+                    legacy_pending.setdefault(key, []).append(action_id)
+                elif (outcome in self._TERMINAL_OUTCOMES or
+                      isinstance(outcome, str) and outcome.startswith("transport_failure:")):
+                    prior = legacy_pending.get(key, [])
+                    if prior:
+                        action_id = prior.pop(0)
+                    elif outcome != "backend_reported_result":
+                        # Lost intent records are still evidence of uncertainty.
+                        action_id = synthetic_id
+                        actions[action_id] = {"action_id": action_id, "tool": tool,
+                            "binding": binding, "at": event.get("at"),
+                            "status": "dispatch_outcome_unknown"}
+                    else:
+                        continue
+                else:
+                    continue
+            if not isinstance(action_id, str) or len(action_id) != 32 or any(c not in '0123456789abcdef' for c in action_id):
+                raise PermissionError("action_receipt_id_invalid")
+            if event.get("decision") == "operator_reconciled":
+                if action_id not in actions or action_id in resolved:
+                    raise PermissionError("action_reconciliation_orphan_or_duplicate")
+                resolved.add(action_id)
+                continue
+            if outcome == "dispatch_intent":
+                if action_id in actions:
+                    raise PermissionError("action_intent_duplicate")
+                tool = event.get("tool")
+                if not isinstance(tool, str) or not tool:
+                    raise PermissionError("action_intent_missing_tool")
+                actions[action_id] = {"action_id": action_id, "tool": tool,
+                    "binding": event.get("binding"), "at": event.get("at"),
+                    "status": "dispatch_outcome_unknown"}
+            elif outcome in self._TERMINAL_OUTCOMES or (isinstance(outcome, str) and outcome.startswith("transport_failure:")):
+                if action_id not in actions or actions[action_id]["status"] != "dispatch_outcome_unknown":
+                    raise PermissionError("action_terminal_missing_or_duplicate_intent")
+                if (event.get("tool") != actions[action_id]["tool"] or
+                        event.get("binding") != actions[action_id]["binding"]):
+                    raise PermissionError("action_terminal_binding_changed")
+                actions[action_id]["status"] = outcome
+        return {aid: event for aid, event in actions.items()
+                if aid not in resolved and event["status"] != "backend_reported_result"}
+
+    def open_incidents(self) -> list[dict[str, Any]]:
+        """Read a verified ledger snapshot; never trust unsigned incident tables."""
+        if self.anchor is not None:
+            # Hold the external checkpoint lock across verification AND scan;
+            # otherwise a writer could swap the ledger between those steps.
+            with self.anchor.locked():
+                with closing(self._conn()) as db:
+                    db.execute("BEGIN")
+                    self.anchor.assert_head(*self._verified_head(db))
+                    return list(self._incidents_tx(db).values())
+        with closing(self._conn()) as db:
+            db.execute("BEGIN")
+            self._verified_head(db)
+            return list(self._incidents_tx(db).values())
+
+    def reconcile_incident(self, action_id: str, actor: str, reference: str,
+                           acknowledgement: str) -> bool:
+        """Trusted operator exception: never automatically replays the action.
+
+        The reference is an external read-back or incident ticket, NOT proof
+        that CATL verified the external action; responsibility remains human.
+        """
+        if (not isinstance(action_id, str) or len(action_id) != 32 or
+                not isinstance(actor, str) or not actor.strip() or len(actor) > 128 or
+                not isinstance(reference, str) or not re.fullmatch(
+                    r"(?:ticket|readback|incident):[A-Za-z0-9._:/#-]{6,192}", reference) or
+                acknowledgement != "I_HAVE_RECONCILED_THE_EXTERNAL_EFFECT"):
+            raise ValueError("incident_reconciliation_evidence_required")
+        with self._receipt_change() as db:
+            incident = self._incidents_tx(db).get(action_id)
+            if incident is None:
+                return False
+            self._append_tx(db, {"at": int(time.time()), "decision": "operator_reconciled",
+                "action_id": action_id, "tool": incident["tool"],
+                "actor": actor, "reference": reference.strip(),
+                "previous_status": incident["status"]})
+            return True
 
     def controls(self) -> dict[str, Any]:
         """Read and authenticate current operator controls on *each* protected call."""

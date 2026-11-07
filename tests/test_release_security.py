@@ -11,6 +11,7 @@ from catl.anchor import AnchorGuard
 from catl.crypto import digest
 from catl.policy import Policy
 from catl.protocol import SERVER_INFO
+from catl import __version__
 from catl.store import State
 
 
@@ -101,7 +102,7 @@ class PathSecurity(unittest.TestCase):
 
 class MetadataSecurity(unittest.TestCase):
     def test_reported_server_version_is_release_candidate(self):
-        self.assertEqual(SERVER_INFO['version'],'0.8.0rc1')
+        self.assertEqual(SERVER_INFO['version'],__version__)
 
 if __name__=='__main__':
     unittest.main()
