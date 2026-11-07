@@ -14,3 +14,8 @@ Read [v0.5 audit](docs/SECURITY_AUDIT_V05.md), [rootless Linux deployment](docs/
 ## Current release evidence
 
 The local engineering review is at [docs/SECURITY_AUDIT_V07.md](docs/SECURITY_AUDIT_V07.md), with explicit unresolved production gates in [docs/RELEASE_GATES_V07.md](docs/RELEASE_GATES_V07.md). No unaudited network service, key access from the agent, or automated trust recovery is included in the protected Linux broker.
+
+
+## 🧨 v0.10 internal red-team findings
+
+See [`docs/RED_TEAM_ASSESSMENT_V010.md`](docs/RED_TEAM_ASSESSMENT_V010.md) for reproducible Linux agent-socket exhaustion and backend message-flood findings, mitigation tests, and known remaining attack surfaces. This report was produced by the development assistant, **not by an independent penetration tester**. Production/GA remains blocked on live host confinement, external security review, external-effect reconciliation and independent audit witnessing.

@@ -5,12 +5,12 @@
 
 **Local-first · Harness-independent · Default-deny · Human-controlled**
 
-![Release](https://img.shields.io/badge/release-v0.9.0rc1-7c3aed?style=for-the-badge)
-![Tests](https://img.shields.io/badge/local_tests-249_passed-16a34a?style=for-the-badge)
+![Release](https://img.shields.io/badge/release-v0.10.0rc1-7c3aed?style=for-the-badge)
+![Tests](https://img.shields.io/badge/local_tests-260_passed-16a34a?style=for-the-badge)
 ![Broker](https://img.shields.io/badge/Linux_broker-rootless_UID_auth-087f8c?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-tool_subset-2563eb?style=for-the-badge)
 ![Security](https://img.shields.io/badge/default-DENY-dc2626?style=for-the-badge)
-[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.9.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
+[![CI](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml/badge.svg?branch=release%2Fv0.10.0-rc1)](https://github.com/BryanFiFife/CATL/actions/workflows/ci.yml)
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)
 ![Offline](https://img.shields.io/badge/offline-first-0f766e)
@@ -18,7 +18,7 @@
 
 🇬🇧 Built by **[Caledapt](https://caledapt.com)** · *Make AI useful. Not mysterious.*
 
-**🔒 Private evaluation · 🧪 Linux hardening candidate · 🚫 Not certified or immune to backdoors**
+**🔒 Private evaluation · 🧨 Red-team regression hardened · 🧪 Linux-only · 🚫 Not independently certified**
 
 </div>
 
@@ -48,7 +48,7 @@ flowchart TD
   R --> S[✅ Result / ⚠️ uncertain / ❌ failure]
 ```
 
-## 🧪 Release candidate: v0.9.0rc1
+## 🧪 Release candidate: v0.10.0rc1
 
 **Candidate status: not yet general availability.** Windows protected process isolation,
 independent pen testing, full Windows protected execution, full modern MCP conformance and remote
@@ -86,7 +86,27 @@ must still add tool-specific read-after-write verification and independently tes
 OS confinement. See [incident runbook](docs/INCIDENT_RECOVERY_V09.md) and
 [release gates](docs/PRODUCTION_ACCEPTANCE_V09.md).
 
-## ✨ What's in v0.9.0rc1?
+## 🧨 New in v0.10: Adversarial broker flood hardening
+
+An internal red-team regression reproduced **two denial-of-service weaknesses in
+v0.9**: an agent could occupy the shared thread budget and obstruct the human
+operator socket; an untrusted backend could fill its bounded event queue and
+permanently block its reader thread. CATL now reserves separate, non-borrowable
+agent/operator connection budgets and uses nonblocking queue overflow detection.
+A flood of malformed backend frames likewise trips a bounded fault rather than
+continuing indefinitely.
+
+The output firewall now rejects unknown MCP content types and high-risk active
+resource-link schemes; ordinary HTTPS links are still untrusted and **must not
+be automatically fetched**. Pinned output schemas may represent any JSON value,
+including arrays, as required by MCP.
+
+These are *internal attack tests*, **not an independent penetration test**.
+An agent that compromises the operator UID, kernel, host policy or broker
+signing key may still bypass this release. The broker remains **Linux-only**.
+See [red-team reproduction and limitations](docs/RED_TEAM_ASSESSMENT_V010.md).
+
+## ✨ What's in v0.10.0rc1?
 
 | Capability | Evidence / limits |
 |---|---|
