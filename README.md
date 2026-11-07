@@ -279,6 +279,10 @@ The Linux broker now limits agent-channel **request attempts across reconnects a
 
 [Broker and backend systemd examples](packaging/systemd/) now include finite memory/swap/task limits, crash-loop limits, core-dump suppression and additional namespace/syscall restrictions. Both pass offline syntax verification; **live host containment remains unverified**. [Evidence and deployment cautions](docs/OS_SERVICE_PROFILE_HARDENING_V011.md).
 
+### 🔐 Protected operator private-key provisioning
+
+The software Ed25519 operator signer now fails closed for **private-key use and generation on unsupported non-POSIX hosts**. Linux/Unix provisioning rejects untrusted writable/symlink parent directories; private signing keys with multiple hard links are refused. Read-only public-key verification remains available. [Key handling test scope](docs/OPERATOR_KEY_GUARD_2026-11-07.md). **This does not implement Windows ACLs, hardware-backed signing or operator presence.**
+
 ## 🩺 Broker preflight (Linux)
 
 Run as the *broker* OS account **after** initial state and external checkpoint

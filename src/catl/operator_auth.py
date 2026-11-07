@@ -39,6 +39,10 @@ def signature_required(command: dict[str, Any]) -> bool:
 
 
 def _require_keyfile(path: Path, *, private: bool) -> bytes:
+    # NTFS mode bits are not a trustworthy Windows ACL review. Until a
+    # protected Windows operator broker exists, never load secret signing keys.
+    if private and os.name != 'posix':
+        raise PermissionError('operator_private_key_requires_reviewed_posix_permissions')
     path = Path(path)
     if path.is_symlink() or path.parent.is_symlink():
         raise PermissionError('operator_key_symlink_refused')
@@ -52,6 +56,8 @@ def _require_keyfile(path: Path, *, private: bool) -> bytes:
         info = os.fstat(fd)
         if not stat.S_ISREG(info.st_mode) or info.st_size > 4096:
             raise PermissionError('operator_key_not_regular_or_oversized')
+        if private and info.st_nlink != 1:
+            raise PermissionError('operator_private_key_hardlink_refused')
         if os.name == 'posix':
             if info.st_uid not in (os.geteuid(), 0):
                 raise PermissionError('operator_key_wrong_owner')
@@ -154,12 +160,21 @@ class SoftwareOperatorSigner:
 
 def generate_test_software_keypair(private_path: Path, public_path: Path) -> None:
     """Explicit provisioner: never silently creates, rotates, or overwrites keys."""
+    if os.name != 'posix':
+        raise PermissionError('operator_key_generation_requires_reviewed_posix_permissions')
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     from cryptography.hazmat.primitives.serialization import (Encoding, PrivateFormat,
                                                                PublicFormat, NoEncryption)
+    values_paths = (Path(private_path), Path(public_path))
+    for path in values_paths:
+        if path.parent.is_symlink() or not path.parent.is_dir():
+            raise PermissionError('operator_key_generation_parent_invalid')
+        parent = path.parent.stat()
+        if parent.st_uid not in (os.geteuid(), 0) or parent.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            raise PermissionError('operator_key_generation_parent_untrusted')
     private = Ed25519PrivateKey.generate()
-    values = ((Path(private_path), private.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()), 0o600),
-              (Path(public_path), private.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex().encode('ascii')+b'\n', 0o644))
+    values = ((values_paths[0], private.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()), 0o600),
+              (values_paths[1], private.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex().encode('ascii')+b'\n', 0o644))
     if values[0][0] == values[1][0] or any(p.exists() or p.is_symlink() for p,_,_ in values):
         raise FileExistsError('operator_key_target_exists')
     created=[]

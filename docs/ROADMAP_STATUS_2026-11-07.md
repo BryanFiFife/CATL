@@ -58,3 +58,7 @@ Added a **per-broker** authenticated-agent request budget (600 attempts per mono
 ## Linux service-profile controls — 7 November 2026
 
 Both CATL systemd evaluation templates now include finite memory/swap limits, startup burst suppression, core-dump denial, keyring/namespace/syscall protections and bounded teardown. Six static regression tests passed locally, as did `systemd-analyze verify` on sanitized templates; offline scoring was 1.6 for each with systemd 257. **No service was installed, and no live LSM/cgroup/network enforcement was tested.** The combined Linux host-hardening milestone remains UNCHECKED. See [service profile evidence](OS_SERVICE_PROFILE_HARDENING_V011.md).
+
+## Software operator key provisioning hardening — 7 November 2026
+
+Private-key generation and loading explicitly fail closed outside POSIX until Windows ACL handling is implemented. POSIX key provisioning checks the immediate parent directory for owner/mode and symlink trust; private signer rejects hardlinked secrets. **11 isolated key-handler tests passed on Linux** with real Ed25519 signatures, including simulated Windows-deny cases; an additional Windows-native regression is prepared for a real platform test. The full CATL native suite **was not executed** in this environment. The hardware-human-presence, Windows protected execution and external pentest gates remain OPEN. See [key guard evidence](OPERATOR_KEY_GUARD_2026-11-07.md).

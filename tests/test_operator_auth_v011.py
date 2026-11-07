@@ -26,6 +26,7 @@ class Backend:
     def notify(self,*a,**kw):pass
     def close(self):pass
 
+@unittest.skipUnless(os.name == 'posix', 'Software signing is fail-closed without POSIX key permissions')
 class SignedOperatorTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
