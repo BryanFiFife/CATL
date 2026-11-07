@@ -16,12 +16,17 @@ def sample(call):
 
 class HermesSmokeValidationTests(unittest.TestCase):
     def test_disarmed_denial_is_required(self):
-        self.assertTrue(validate_replies(sample(
-            {"error": {"message": "operator_disabled_gateway_or_audit"}}),
-            tool="echo_safe", expect="disarmed")["passed"])
+        halted = sample({"error": {"message": "operator_disabled_gateway_or_audit"}})
+        halted[1]["result"]["tools"] = []
+        self.assertTrue(validate_replies(
+            halted, tool="echo_safe", expect="disarmed")["passed"])
         with self.assertRaises(AssertionError):
-            validate_replies(sample({"result": {"content": [{"type": "text", "text": "oops"}]}}),
+            validate_replies(sample({"error": {"message": "operator_disabled_gateway_or_audit"}}),
                              tool="echo_safe", expect="disarmed")
+        unexpected = sample({"result": {"content": [{"type": "text", "text": "oops"}]}})
+        unexpected[1]["result"]["tools"] = []
+        with self.assertRaises(AssertionError):
+            validate_replies(unexpected, tool="echo_safe", expect="disarmed")
 
     def test_armed_and_approval_paths(self):
         self.assertTrue(validate_replies(sample(

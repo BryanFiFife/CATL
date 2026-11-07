@@ -126,7 +126,7 @@ Under **catl-agent**, with broker/backend running but gateway still paused:
   --agent-socket /run/catl-agent/agent.sock --expect disarmed
 ```
 
-This performs real stdio `initialize`, `notifications/initialized`, `tools/list` and `tools/call` through `catl shim`. It must produce JSON `"passed":true` and `"call_outcome":"operator_disabled_gateway_or_audit"`.
+This performs real stdio `initialize`, `notifications/initialized`, `tools/list` and `tools/call` through `catl shim`. It must produce JSON `"passed":true`, `"advertised_tool_count":0` and `"call_outcome":"operator_disabled_gateway_or_audit"`. **When paused, CATL intentionally advertises no tools.** Start Hermes discovery after a signed resume, or perform Hermes `/reload-mcp` after arming; otherwise it may register no CATL tools for the session.
 
 Under the trusted operator, enable the gateway (signed):
 

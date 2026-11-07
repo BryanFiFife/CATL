@@ -24,7 +24,13 @@ def validate_replies(replies: list[dict], *, tool: str, expect: str, expected_te
     if init.get("protocolVersion") != "2025-11-25":
         raise AssertionError("CATL_legacy_protocol_handshake_failed")
     listed = by_id[2].get("result", {}).get("tools", [])
-    if not isinstance(listed, list) or tool not in {
+    if not isinstance(listed, list):
+        raise AssertionError("MCP_tool_catalogue_invalid")
+    if expect == "disarmed":
+        # The protected gateway deliberately advertises no tools when paused.
+        if listed:
+            raise AssertionError("disarmed_gateway_advertised_tools")
+    elif tool not in {
         t.get("name") for t in listed if isinstance(t, dict)
     }:
         raise AssertionError("expected_reviewed_tool_not_listed")
