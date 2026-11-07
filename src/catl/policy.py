@@ -57,13 +57,13 @@ class Policy:
             if not isinstance(cs, list) or len(cs) > 16:
                 raise ValueError("conditions_invalid")
             for c in cs:
-                if not isinstance(c, dict) or set(c) != {"pointer", "op", "value"} or not isinstance(c["pointer"], str) or not c["pointer"].startswith("/") or c["op"] not in ("eq", "one_of", "lte", "gte", "starts_with"):
+                if not isinstance(c, dict) or set(c) != {"pointer", "op", "value"} or not isinstance(c["pointer"], str) or not c["pointer"].startswith("/") or c["op"] not in ("eq", "one_of", "lte", "gte", "starts_with", "path_within"):
                     raise ValueError("condition_invalid")
                 if c["op"] == "one_of" and (not isinstance(c["value"], list) or len(c["value"]) > 100):
                     raise ValueError("condition_list_invalid")
                 if c["op"] in ("lte", "gte") and (not isinstance(c["value"], (int, float)) or isinstance(c["value"], bool)):
                     raise ValueError("condition_number_invalid")
-                if c["op"] == "starts_with" and not isinstance(c["value"], str):
+                if c["op"] in ("starts_with", "path_within") and not isinstance(c["value"], str):
                     raise ValueError("condition_prefix_invalid")
             rules.append(Rule(rr["tool"], rr["effect"], tuple(cs)))
         raw_post = obj.get("postconditions", {})
@@ -133,4 +133,20 @@ def _condition(c: dict[str, Any], args: dict[str, Any]) -> bool:
         return isinstance(current, (int, float)) and not isinstance(current, bool) and current >= expected
     if op == "starts_with":
         return isinstance(current, str) and current.startswith(expected)
+    if op == "path_within":
+        # Lexical containment only; the tool service still requires OS-level
+        # filesystem confinement and no-follow handling for symlink attacks.
+        # Exact prefix components: /safe does NOT authorise /safe-evil.
+        from pathlib import PurePosixPath
+        if not isinstance(current, str) or not isinstance(expected, str):
+            return False
+        # Deny backslashes and relative paths rather than guessing platform.
+        if ("\\" in current or "\\" in expected or "\x00" in current or "\x00" in expected or
+                not current.startswith("/") or not expected.startswith("/")):
+            return False
+        candidate, root = PurePosixPath(current), PurePosixPath(expected)
+        if (".." in candidate.parts or ".." in root.parts or
+                "//" in current or "//" in expected):
+            return False
+        return candidate == root or root in candidate.parents
     return False

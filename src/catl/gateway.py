@@ -178,7 +178,7 @@ class Gateway:
             return
         response = self.backend.request("initialize", {
             "protocolVersion": "2025-11-25",
-            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.5.0"}})
+            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.6.0-rc1"}})
         if "error" in response or not isinstance(response.get("result"), dict):
             raise RuntimeError("backend_initialization_failed")
         self.backend.notify("notifications/initialized")
@@ -238,12 +238,9 @@ class Gateway:
         if is_req and (msg["id"] is None or isinstance(msg["id"], bool) or not isinstance(msg["id"], (int, str))):
             return error(None, "invalid_request_id", -32600)
         if not is_req:
-            if era == "legacy" and method == "notifications/initialized":
-                # Backend initialize may already have sent this in an earlier modern call.
-                if not self._legacy_initialized:
-                    self.backend.notify(method, msg.get("params"))
-                    self._legacy_initialized = True
-            # No other agent-controlled notifications are forwarded in v0.1.
+            # The broker owns the upstream handshake. Never forward untrusted
+            # client notifications to the backend, including out-of-order
+            # initialized messages while the gateway is disarmed.
             return None
         id_ = msg["id"]
         if era == "modern" and method == "server/discover":
@@ -254,18 +251,15 @@ class Gateway:
         if method == "ping":
             return {"jsonrpc": "2.0", "id": id_, "result": {}}
         if method == "initialize":
-            try:
-                response = self.backend.request("initialize", params)
-                if "error" in response:
-                    return {"jsonrpc": "2.0", "id": id_, "error": response["error"]}
-                result = response.get("result", {})
-                if not isinstance(result, dict):
-                    raise ValueError("invalid_initialize_response")
-                self.backend_ready = True
-                result = {**result, "capabilities": {"tools": {"listChanged": False}}}
-                return {"jsonrpc": "2.0", "id": id_, "result": result}
-            except (RuntimeError, TimeoutError, ValueError, OSError) as exc:
-                return error(id_, f"backend_error:{type(exc).__name__}")
+            # A legacy client's self-declared capabilities and identifiers are
+            # untrusted input. Respond locally without activating a backend or
+            # forwarding arbitrary client-supplied initialization metadata.
+            if params.get("protocolVersion") not in (None, "2025-11-25"):
+                return error(id_, "unsupported_protocol_version", -32022)
+            return {"jsonrpc": "2.0", "id": id_, "result": {
+                "protocolVersion": "2025-11-25",
+                "capabilities": {"tools": {"listChanged": False}},
+                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.6.0-rc1"}}}
         if method == "tools/list":
             try:
                 result = {"jsonrpc": "2.0", "id": id_, "result": {"tools": self._refresh()}}

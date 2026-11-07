@@ -94,14 +94,17 @@ class State:
 
     def _verified_head(self, db: sqlite3.Connection) -> tuple[int, str]:
         """Reverify the ENTIRE receipt chain before trusting an anchored head."""
-        rows = db.execute("SELECT seq,body,previous,mac FROM receipts ORDER BY seq").fetchall()
+        # Stream rather than materialise the entire ledger in RAM. A long-running
+        # agent may have millions of receipts; full-memory fetch was a local DoS.
         previous = "GENESIS"
-        for expected_seq, (seq, body, prev, mac) in enumerate(rows, 1):
+        count = 0
+        for count, (seq, body, prev, mac) in enumerate(
+                db.execute("SELECT seq,body,previous,mac FROM receipts ORDER BY seq"), 1):
             expected = hmac_hex(self.key, {"body": body, "previous": previous})
-            if seq != expected_seq or prev != previous or not hmac.compare_digest(expected, mac):
+            if seq != count or prev != previous or not hmac.compare_digest(expected, mac):
                 raise PermissionError("receipt_chain_integrity_invalid")
             previous = mac
-        return len(rows), previous
+        return count, previous
 
     @staticmethod
     def _last_control_digest(db: sqlite3.Connection) -> str | None:
@@ -123,6 +126,10 @@ class State:
 
     def assert_anchor(self) -> None:
         if self.anchor is None:
+            # Demo/legacy mode still authenticates the ledger even though it
+            # cannot detect valid truncated tails without an independent head.
+            with closing(self._conn()) as db:
+                self._verified_head(db)
             return
         with self.anchor.locked():
             with closing(self._conn()) as db:
@@ -151,6 +158,7 @@ class State:
         else:
             with closing(self._conn()) as db:
                 db.execute("BEGIN IMMEDIATE")
+                self._verified_head(db)  # never treat unsigned mutable rows as authority
                 try:
                     yield db
                 except BaseException:
@@ -247,24 +255,32 @@ class State:
 
 
     def acquire_rate(self, agent: str, tool: str, maximum_per_minute: int) -> bool:
-        """Fixed-window per-tool bound shared by every process using this database."""
+        """Authenticated fixed-window throttle, derived from the anchored ledger.
+
+        The legacy `tool_rate` SQLite table is intentionally ignored: unlike
+        signed receipts, a mutable unkeyed counter can be rewound offline.
+        Every granted slot is a signed, anchored receipt, including when a
+        caller later fails to execute, to prevent quota-replay after crashes.
+        """
         if type(maximum_per_minute) is not int or not 1 <= maximum_per_minute <= 600:
             raise ValueError("rate_limit_invalid")
+        if not isinstance(agent, str) or not agent or not isinstance(tool, str) or not tool:
+            raise ValueError("rate_identity_invalid")
         window = int(time.time()) // 60
-        with closing(self._conn()) as db:
-            db.execute("BEGIN IMMEDIATE")
-            row = db.execute("SELECT window,count FROM tool_rate WHERE agent_id=? AND tool=?",
-                             (agent, tool)).fetchone()
-            if row and row[0] == window and row[1] >= maximum_per_minute:
-                db.commit()
-                return False
-            if row and row[0] == window:
-                db.execute("UPDATE tool_rate SET count=count+1 WHERE agent_id=? AND tool=?", (agent, tool))
-            else:
-                db.execute("INSERT INTO tool_rate(agent_id,tool,window,count) VALUES(?,?,?,1) ON CONFLICT(agent_id,tool) DO UPDATE SET window=excluded.window,count=1",
-                           (agent, tool, window))
-            db.commit()
+        with self._receipt_change() as db:
+            used = 0
+            for (body,) in db.execute("SELECT body FROM receipts ORDER BY seq DESC"):
+                event = json.loads(body)
+                if (event.get("decision") == "rate_permit" and
+                        event.get("agent_id") == agent and event.get("tool") == tool and
+                        event.get("window") == window):
+                    used += 1
+                    if used >= maximum_per_minute:
+                        return False
+            self._append_tx(db, {"at": int(time.time()), "decision": "rate_permit",
+                                 "agent_id": agent, "tool": tool, "window": window})
             return True
+
 
     def controls(self) -> dict[str, Any]:
         """Read and authenticate current operator controls on *each* protected call."""
