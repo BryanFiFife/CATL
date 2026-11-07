@@ -71,6 +71,8 @@ def main(argv: list[str] | None = None) -> int:
     broker.add_argument("--backend-user", help="Legacy root-only supervised subprocess identity")
     broker.add_argument("--backend-socket", type=Path, help="v0.5: connect to an independently supervised backend socket")
     broker.add_argument("--backend-uid", type=int, help="v0.5: expected backend service kernel UID")
+    broker.add_argument("--backend-era", choices=("legacy", "modern"), default="legacy",
+                        help="Explicitly select modern 2026-07-28 tools-only upstream protocol; legacy default")
     broker.add_argument("--agent-gid", type=int, help="v0.5 rootless IPC group for agent; distinct from operator group")
     broker.add_argument("--operator-gid", type=int, help="v0.5 rootless IPC group for operator")
     backend_service = sub.add_parser("backend-service", help="v0.5: Linux unprivileged tool backend socket service")
@@ -220,6 +222,11 @@ def main(argv: list[str] | None = None) -> int:
                     raise PermissionError("backend_must_not_share_agent_or_operator_identity")
                 backend = SubprocessBackend(command, backend_user=args.backend_user, allow_unsandboxed=False,
                                             pass_env=tuple(args.pass_env), workdir=args.backend_workdir)
+            # Default to the audited legacy path; modern is explicit and must
+            # discover a real modern tools-capable upstream (no downgrade).
+            if args.backend_era == "modern":
+                from .mcp_modern_upstream import ModernToolsBackend
+                backend = ModernToolsBackend(backend)
             try:
                 supervisor = BrokerServer(Gateway(policy, state, backend), state, policy,
                                           agent_socket=args.agent_socket, operator_socket=args.operator_socket,

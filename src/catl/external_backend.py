@@ -23,7 +23,7 @@ from .broker import _peer_uid, _prepare_socket, _read_frame, _write_frame
 from .crypto import MAX_WIRE_BYTES
 from .gateway import Backend
 
-ALLOWED_REQUEST_METHODS = frozenset({"initialize", "tools/list", "tools/call"})
+ALLOWED_REQUEST_METHODS = frozenset({"initialize", "server/discover", "tools/list", "tools/call"})
 ALLOWED_NOTIFICATION_METHODS = frozenset({"notifications/initialized"})
 
 

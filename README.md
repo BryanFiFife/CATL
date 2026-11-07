@@ -295,6 +295,12 @@ CATL's native JSON decoder now rejects exponent overflow (`1e999`) and nonzero d
 
 [`tools/offline_native_acceptance.py`](tools/offline_native_acceptance.py) verifies the tracked Git source file list, SHA-256 manifest and checksum index **before running the full `test_*.py` unit suite offline**. It refuses a dirty or mismatched checkout, bounds hangs, and writes `acceptance.json` plus `native-unittest.log` outside the source tree. **12 isolated runner regression tests passed.** The full private CATL suite was **not** executed in this development environment. [Read the offline acceptance instructions](docs/OFFLINE_NATIVE_ACCEPTANCE.md).
 
+### 🔧 Six outstanding roadmap workstreams — development implementation
+
+A [separate six-workstream implementation report](docs/SIX_GATE_IMPLEMENTATION_2026-11-07.md) covers new WebAuthn assertion verification, Linux/Windows/macOS isolation proofs, explicit **modern MCP upstream tools-only mode** (`catl broker --backend-era modern`), crash-conservative provider idempotency/readback, independently signed witness receipts, an mTLS witness-service scaffold and offline SBOM validation.
+
+**Local focused tests are not full platform or live service evidence.** The six combined roadmap milestones below remain **unchecked**, including FIDO2 hardware, real AppContainer/macOS sandbox, SDK conformance, live provider readback, remote witness deployment and independent penetration testing. No running services or Hermes installation were changed.
+
 ## 🩺 Broker preflight (Linux)
 
 Run as the *broker* OS account **after** initial state and external checkpoint
