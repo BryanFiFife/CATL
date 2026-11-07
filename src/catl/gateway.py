@@ -4,12 +4,14 @@ Consciously limited to one backend process and serial requests in this first rel
 """
 from __future__ import annotations
 import json
+import ipaddress
 import queue
 import secrets
 import subprocess
 import sys
 import threading
 import time
+from urllib.parse import urlsplit
 from pathlib import Path
 from typing import Any, Protocol
 from .crypto import MAX_WIRE_BYTES, digest, parse_json
@@ -23,6 +25,57 @@ from .schema import validate_arguments, validate_structured_output
 # The backend is untrusted even when a tool was present in a pinned catalogue.
 # Never pass an oversized or malformed tool reply into a success path.
 MAX_TOOL_REPLY_BYTES = 512 * 1024
+
+# The model consumes backend text as untrusted data; do not let a malicious
+# backend smuggle novel content types or active URI schemes through the proxy.
+# New MCP types must be reviewed before adding them to this allowlist.
+SUPPORTED_CONTENT_TYPES = frozenset({"text", "image", "audio", "resource", "resource_link"})
+
+
+def _validate_display_uri(uri: Any) -> None:
+    """Parse only; CATL never follows links or grants network authority."""
+    if not isinstance(uri, str) or len(uri) > 2048 or any(ord(ch) < 32 for ch in uri):
+        raise ValueError("backend_resource_link_invalid")
+    parsed = urlsplit(uri)
+    hostname = (parsed.hostname or "").lower()
+    if (parsed.scheme != "https" or not hostname or
+            parsed.username is not None or parsed.password is not None or
+            hostname == "localhost" or hostname.endswith((".localhost", ".local", ".internal"))):
+        raise ValueError("backend_resource_link_scheme_denied")
+    try:
+        addr = ipaddress.ip_address(hostname)
+    except ValueError:
+        pass  # DNS names aren't resolved or automatically fetched by CATL.
+    else:
+        if not addr.is_global:
+            raise ValueError("backend_resource_link_private_address_denied")
+
+
+def _validate_content_item(item: Any) -> None:
+    if not isinstance(item, dict) or item.get("type") not in SUPPORTED_CONTENT_TYPES:
+        raise ValueError("backend_tool_content_type_unsupported")
+    kind = item["type"]
+    if kind == "text":
+        if not isinstance(item.get("text"), str):
+            raise ValueError("backend_tool_text_invalid")
+    elif kind in ("image", "audio"):
+        required_mime = "image/" if kind == "image" else "audio/"
+        if (not isinstance(item.get("data"), str) or
+                not isinstance(item.get("mimeType"), str) or
+                not item["mimeType"].startswith(required_mime)):
+            raise ValueError("backend_tool_media_invalid")
+        # Do not decode media in the supervisor; a downstream decoder may have
+        # its own vulnerabilities. The full JSON reply remains size-limited.
+    elif kind == "resource_link":
+        _validate_display_uri(item.get("uri"))
+    else:
+        resource = item.get("resource")
+        if not isinstance(resource, dict) or not isinstance(resource.get("uri"), str):
+            raise ValueError("backend_embedded_resource_invalid")
+        _validate_display_uri(resource["uri"])
+        if not (isinstance(resource.get("text"), str) ^ isinstance(resource.get("blob"), str)):
+            raise ValueError("backend_embedded_resource_content_invalid")
+        # Embedded resources are *data*, never an authorization signal.
 
 def checked_tool_reply(reply: dict[str, Any], *, tool: dict[str, Any] | None = None) -> tuple[str, Any]:
     if not isinstance(reply, dict) or ("result" in reply) == ("error" in reply):
@@ -49,19 +102,44 @@ def checked_tool_reply(reply: dict[str, Any], *, tool: dict[str, Any] | None = N
     # The legacy backend may omit resultType but must never invent a variant.
     if result.get("resultType", "complete") != "complete":
         raise ValueError("backend_result_not_complete")
+    if "inputRequests" in result or "requestState" in result:
+        # A 'complete' result carrying unfinished multi-round-trip state
+        # must never smuggle a continuation into the agent channel.
+        raise ValueError("backend_mixed_completion_and_continuation")
     content = result.get("content")
     if not isinstance(content, list) or len(content) > 64:
         raise ValueError("backend_tool_content_invalid")
     for item in content:
-        if not isinstance(item, dict) or not isinstance(item.get("type"), str):
-            raise ValueError("backend_tool_content_invalid")
-        if item["type"] == "text" and not isinstance(item.get("text"), str):
-            raise ValueError("backend_tool_text_invalid")
+        _validate_content_item(item)
     if tool is not None:
         validate_structured_output(tool, result)
-    # Strip backend-supplied _meta; it is untrusted tool data, not CATL
-    # authority. Non-metadata result fields are preserved for SDK clients.
-    return "result", {k: v for k, v in result.items() if k != "_meta"}
+    # CATL forwards only the reviewed MCP result contract. Unknown keys and
+    # untrusted _meta must never acquire semantics in a downstream harness.
+    sanitized: dict[str, Any] = {"content": []}
+    if "resultType" in result:
+        sanitized["resultType"] = "complete"
+    if "isError" in result:
+        sanitized["isError"] = result["isError"]
+    if "structuredContent" in result:
+        sanitized["structuredContent"] = result["structuredContent"]
+    for item in content:
+        kind = item["type"]
+        if kind == "text":
+            sanitized["content"].append({"type": kind, "text": item["text"]})
+        elif kind in ("image", "audio"):
+            sanitized["content"].append({"type": kind, "data": item["data"], "mimeType": item["mimeType"]})
+        elif kind == "resource_link":
+            safe = {"type": kind, "uri": item["uri"]}
+            for field in ("name", "description", "mimeType"):
+                if field in item and isinstance(item[field], str):
+                    safe[field] = item[field]
+            sanitized["content"].append(safe)
+        else:
+            resource = item["resource"]
+            safe_resource = {key: resource[key] for key in ("uri", "text", "blob", "mimeType")
+                             if key in resource and isinstance(resource[key], str)}
+            sanitized["content"].append({"type": "resource", "resource": safe_resource})
+    return "result", sanitized
 
 
 class Backend(Protocol):
@@ -96,12 +174,14 @@ class SubprocessBackend:
         self.proc = subprocess.Popen(command, **kwargs)
         self.events: queue.Queue[dict[str, Any] | None] = queue.Queue(maxsize=512)
         self.seq = 0
+        self._overflow = threading.Event()
         self._reader = threading.Thread(target=self._pump, daemon=True)
         self._reader.start()
 
     def _pump(self) -> None:
         try:
             assert self.proc.stdout is not None
+            malformed_count = 0
             while True:
                 line = self.proc.stdout.readline(MAX_WIRE_BYTES + 2)
                 if not line:
@@ -109,11 +189,27 @@ class SubprocessBackend:
                 try:
                     event = parse_json(line)
                 except (ValueError, UnicodeError, json.JSONDecodeError):
-                    # Malformed child output cannot be used as an authorization signal.
+                    malformed_count += 1
+                    if malformed_count >= 32:
+                        # Infinite invalid frames must not pin a CPU core.
+                        self._overflow.set()
+                        break
                     continue
-                self.events.put(event)
+                malformed_count = 0
+                try:
+                    self.events.put_nowait(event)
+                except queue.Full:
+                    # A malicious backend can emit unlimited unsolicited
+                    # messages. Never strand the reader on a full queue.
+                    self._overflow.set()
+                    break
         finally:
-            self.events.put(None)
+            try:
+                self.events.put_nowait(None)
+            except queue.Full:
+                # request() checks _overflow independently, so a sentinel
+                # must never block a daemon thread during shutdown.
+                self._overflow.set()
 
     def notify(self, method: str, params: dict[str, Any] | None = None) -> None:
         self._send({"jsonrpc": "2.0", "method": method, **({"params": params} if params else {})})
@@ -150,6 +246,9 @@ class SubprocessBackend:
         self._send({"jsonrpc": "2.0", "id": request_id, "method": method, **({"params": params} if params is not None else {})})
         deadline = time.monotonic() + self.timeout
         while True:
+            if self._overflow.is_set():
+                self.close()
+                raise RuntimeError("backend_event_queue_overflow")
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 self.close()  # no later dispatch against a timed-out backend
@@ -159,6 +258,9 @@ class SubprocessBackend:
             except queue.Empty as exc:
                 self.close()  # stop late side effects; outcome still uncertain
                 raise TimeoutError("backend_timeout") from exc
+            if self._overflow.is_set():
+                self.close()
+                raise RuntimeError("backend_event_queue_overflow")
             if event is None:
                 raise RuntimeError("backend_closed")
             # A backend request or notification cannot directly reach the agent.
@@ -222,7 +324,7 @@ class Gateway:
             return
         response = self.backend.request("initialize", {
             "protocolVersion": "2025-11-25",
-            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.9.0rc1"}})
+            "capabilities": {}, "clientInfo": {"name": "caledapt-agent-trust", "version": "0.10.0rc1"}})
         if "error" in response or not isinstance(response.get("result"), dict):
             raise RuntimeError("backend_initialization_failed")
         self.backend.notify("notifications/initialized")
@@ -307,7 +409,7 @@ class Gateway:
             return {"jsonrpc": "2.0", "id": id_, "result": {
                 "protocolVersion": "2025-11-25",
                 "capabilities": {"tools": {"listChanged": False}},
-                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.9.0rc1"}}}
+                "serverInfo": {"name": "caledapt-agent-trust", "version": "0.10.0rc1"}}}
         if method == "tools/list":
             try:
                 result = {"jsonrpc": "2.0", "id": id_, "result": {"tools": self._refresh()}}

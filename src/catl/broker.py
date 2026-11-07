@@ -25,7 +25,13 @@ from .gateway import Gateway
 from .policy import Policy
 from .store import State
 
+# Separate, non-borrowable budgets ensure the agent cannot exhaust the operator
+# control plane with idle or malicious connections.  The rootless socket ACL
+# and SO_PEERCRED identity check remain mandatory in addition to these limits.
 MAX_CLIENTS = 16
+MAX_AGENT_CLIENTS = 8
+MAX_OPERATOR_CLIENTS = MAX_CLIENTS - MAX_AGENT_CLIENTS
+MAX_AGENT_REQUESTS_PER_CONNECTION = 64
 
 
 def _peer_uid(conn: socket.socket) -> int:
@@ -121,6 +127,11 @@ class BrokerServer:
         self.stop = threading.Event()
         self._gate_lock = threading.RLock()  # backend is serial, never multiplex unguarded
         self._threads: list[threading.Thread] = []
+        self._threads_lock = threading.Lock()
+        self._slots = {
+            "agent": threading.BoundedSemaphore(MAX_AGENT_CLIENTS),
+            "operator": threading.BoundedSemaphore(MAX_OPERATOR_CLIENTS),
+        }
         self._sockets: list[socket.socket] = []
 
     def _op(self, msg: dict[str, Any], uid: int) -> dict[str, Any]:
@@ -175,7 +186,9 @@ class BrokerServer:
                     except (OSError, ValueError, PermissionError, TypeError, RecursionError) as exc:
                         _write_frame(stream, {"ok": False, "error": type(exc).__name__ + ":" + str(exc)[:120]})
                     return
-                while not self.stop.is_set():
+                for _request_number in range(MAX_AGENT_REQUESTS_PER_CONNECTION):
+                    if self.stop.is_set():
+                        return
                     try:
                         msg = _read_frame(stream)
                         if msg is None:
@@ -203,14 +216,28 @@ class BrokerServer:
                 continue
             except OSError:
                 return
-            # Avoid creating unbounded threads on a local connection flood.
-            self._threads = [t for t in self._threads if t.is_alive()]
-            if len(self._threads) >= MAX_CLIENTS:
+            # Agent and operator have independent non-borrowable budgets.
+            # Even MAX_AGENT_CLIENTS malicious idle agents cannot consume the
+            # protected operator reserve. Never block accept() waiting for slots.
+            slot = self._slots[role]
+            if not slot.acquire(blocking=False):
                 conn.close()
                 continue
-            t = threading.Thread(target=self._client, args=(conn, role), daemon=True)
-            self._threads.append(t)
-            t.start()
+            def serve_client(client=conn, client_role=role, reservation=slot):
+                try:
+                    self._client(client, client_role)
+                finally:
+                    reservation.release()
+            t = threading.Thread(target=serve_client, daemon=True)
+            try:
+                with self._threads_lock:
+                    self._threads = [old for old in self._threads if old.is_alive()]
+                    self._threads.append(t)
+                t.start()
+            except BaseException:
+                slot.release()
+                conn.close()
+                raise
 
     def serve(self) -> None:
         agent_sock: socket.socket | None = None

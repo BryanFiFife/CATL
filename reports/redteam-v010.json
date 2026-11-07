@@ -1,0 +1,25 @@
+{
+  "name": "CATL internal red-team assessment",
+  "version": "0.10.0rc1",
+  "date": "2026-11-07",
+  "environment": "Disposable Linux local AF_UNIX/hostile-backend fixtures",
+  "independent_assessment": false,
+  "baseline_version": "0.9.0rc1",
+  "baseline_negative_tests": {"result": "FAIL", "failures": 3, "details": [
+    "operator socket starved by idle agent clients",
+    "backend queue reader stalled by notification flood",
+    "backend queue reader stalled by malformed-frame flood"
+  ]},
+  "implemented_remediations": [
+    "independent agent/operator socket budgets",
+    "nonblocking backend queue overflow",
+    "bounded malformed backend frames",
+    "MCP result sanitization and URI allowlist",
+    "supported structured output schema types",
+    "GitHub fork PR privileged test exclusion"
+  ],
+  "production_ga": false,
+  "open_gates": ["independent pentest", "production host sandbox attestation",
+    "external action verification", "hardware-backed operator confirmation",
+    "signed release provenance", "off-host audit witness", "full MCP conformance and load test"]
+}

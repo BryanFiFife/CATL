@@ -1,0 +1,5 @@
+CATL v0.10.0rc1 — local Linux/Xvfb regression suite
+Command: PYTHONPATH=src xvfb-run -a python -m unittest discover -s tests -q
+Result: Ran 260 tests in 49.878s; OK (0 failures, 0 errors)
+New hostile-message and cross-UID agent-flood tests are included.
+ResourceWarning messages concerning SQLite connections occurred in test fixtures; not a test failure, but still test hygiene debt.

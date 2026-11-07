@@ -1,0 +1,29 @@
+{
+  "release": "0.10.0rc1",
+  "date": "2026-11-07",
+  "local_full_suite": {
+    "tests": 260,
+    "failures": 0,
+    "errors": 0,
+    "linux_xvfb": true
+  },
+  "internal_red_team": {
+    "v09_confirmed_failures": 3,
+    "candidate_targeted_tests": 11,
+    "targeted_pass": true
+  },
+  "static_sanity": "PASS",
+  "root_peer_credentials_integration": "PASS (local adversarial cross-UID reserved operator channel)",
+  "github_ci": {
+    "run_id": 42376729850,
+    "url": "https://github.com/BryanFiFife/CATL/actions/runs/42376729850",
+    "commit": "53b5c4994b6537167db2ee08fb0f7ccffcbae89a",
+    "jobs_total": 10,
+    "jobs_successful": 10,
+    "privileged_cross_uid_agent_flood_step": "PASS",
+    "security_scans": "PASS",
+    "platform_scope": "Protected Linux; Windows portability only; macOS portable regression only"
+  },
+  "production_ga": false,
+  "independent_pentest": false
+}

@@ -64,6 +64,10 @@ jobs:
           python -m unittest discover -s tests -p test_host_audit.py -v
 
   linux-graphical-and-identity:
+    # This job uses sudo to test kernel peer credentials. Never execute forked
+    # PR-supplied code with elevated privileges, especially when public.
+    # Unprivileged portable tests still run for external contributions.
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.repo.owner.login == github.repository_owner)
     runs-on: ubuntu-latest
     env:
       PYTHONPATH: src
@@ -91,6 +95,15 @@ jobs:
           cp -R src tests examples "$stage/"
           chmod -R a+rX "$stage"
           sudo env "PYTHONPATH=$stage/src" "$(command -v python)" "$stage/tests/integration_rootless_e2e.py"
+      - name: Red-team agent-flood must not block operator emergency access
+        shell: bash
+        run: |
+          stage="$(mktemp -d /tmp/catl-redteam-ci.XXXXXXXX)"
+          trap 'sudo rm -rf "$stage"' EXIT
+          cp -R src tests "$stage/"
+          chmod -R a+rX "$stage"
+          sudo env "PYTHONPATH=$stage/src:$stage/tests" "$(command -v python)" \
+            -m unittest test_redteam_dos_v010.OperatorFloodTests -v
 
   security-scans:
     runs-on: ubuntu-latest
