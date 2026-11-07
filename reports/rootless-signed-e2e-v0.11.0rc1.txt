@@ -1,0 +1,1 @@
+PASS rootless Linux 4-UID signed E2E: unsigned-forgery denial, tool call, approval/replay, audit, channel isolation, key denial

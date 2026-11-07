@@ -52,11 +52,13 @@ Verify with `stat`, `id`, `namei -l`, and systemd unit inspection before enablin
      --operator-socket /run/catl-operator/operator.sock \
      --agent-uid <agent_UID> --operator-uid <operator_UID> \
      --agent-gid <agent_IPC_GID> --operator-gid <operator_IPC_GID> \
-     --backend-socket /run/catl-tools/tools.sock --backend-uid <tools_UID>
+     --backend-socket /run/catl-tools/tools.sock --backend-uid <tools_UID> \
+     --operator-public-key /etc/catl/operator-public.hex
    ```
 
-6. Under **`catl-agent`**, point the harness at `catl shim --agent-socket /run/catl-agent/agent.sock`. Under the trusted human OS account, launch `catl overlay --operator-socket /run/catl-operator/operator.sock`.
-7. Verify the actual operator via the protected operator socket, check the pinned tool catalogue, then *explicitly arm* the gateway. By default fresh/reconstructed state is disarmed.
+6. Prior to protected startup, provision operator signing keypair **outside broker/agent identity**, distribute only the public key via a trusted administrator and verify its immutable ownership/mode. See [v0.11 signing](OPERATOR_SIGNING_V011.md). `catl broker` now refuses to start without `--operator-public-key` unless an explicit `--allow-uid-only-operator` unsafe-evaluation flag is set.
+7. Under **`catl-agent`**, point the harness at `catl shim --agent-socket /run/catl-agent/agent.sock`. Under the trusted human OS account, launch `catl overlay --operator-socket /run/catl-operator/operator.sock`.
+8. Verify the actual operator via the protected operator socket, check the pinned tool catalogue, then *explicitly arm* the gateway. By default fresh/reconstructed state is disarmed.
 
 ## systemd hardening to evaluate per service
 

@@ -1,0 +1,8 @@
+CATL v0.11.0rc1 — regression evidence (2026-11-07)
+
+Batch A: 229 tests, PASSED, Linux Python 3.13
+Batch B: 49 tests, PASSED, Xvfb/Linux Python 3.13
+Total: 278 tests, PASSED
+
+Real 4-UID signed operator integration: PASSED
+Source tests are internal developer-authored evidence, not independent certification.

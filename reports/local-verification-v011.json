@@ -1,0 +1,20 @@
+{
+  "version": "0.11.0rc1",
+  "date": "2026-11-07",
+  "test_results": {
+    "linux_batch_a": 229,
+    "linux_gui_batch_b": 49,
+    "total": 278,
+    "result": "pass"
+  },
+  "rootless_signed_e2e": "pass",
+  "source_security": "internal developer-authored",
+  "remaining_gates": [
+    "hardware-backed physical operator presence",
+    "real target-host adversarial test",
+    "independent penetration test and retest",
+    "off-host witnessed audit",
+    "real provider outcome verification",
+    "artifact signing and provenance"
+  ]
+}
