@@ -47,3 +47,8 @@ catl broker ... --backend-era modern ...
 ## Exit criteria to actually tick six boxes
 
 **None satisfied from this Linux container alone.** Require signed third-party/host-specific evidence for: (1) live Linux Hermes+CATL under four UIDs with FIDO2 and kernel egress barriers, (2) Windows launcher+pipe adversarial results, (3) real macOS sandbox peer-auth E2E, (4) MCP SDK transport/era conformance including explicitly supported methods, (5) actual provider read-after-write and crash/restart payment/email test, (6) independent off-host witness, signed reproducible release, independently reviewed SBOM and third-party pentest. Keep all six checkboxes unchecked until all corresponding obligations are demonstrated.
+
+
+## Addendum: real on-host mTLS and process crash tests — 7 November 2026
+
+See [witness runtime hardening and acceptance](WITNESS_RUNTIME_ACCEPTANCE_2026-11-07.md). This follow-up raises the focused local tests to **107 passing** (plus five pytest subtests), strengthens the witness transport with worker/handshake limits and an exact trusted client-certificate fingerprint, validates real local TLS 1.3 with a separate non-root witness process, and runs process-kill/concurrent-transaction checks using a fake provider. The witness server now requires `--client-cert-sha256` at startup. **No independent remote host, real provider transaction, hardware FIDO2 device or full native CATL deployment was tested.**

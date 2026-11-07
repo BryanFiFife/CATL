@@ -173,7 +173,7 @@ def https_witness_transport(url:str, *, ssl_context, timeout:float=5.0):
     pin. Deploy with mutual TLS / client auth or equivalent access controls.
     """
     from urllib.parse import urlsplit
-    from urllib.request import Request,build_opener,HTTPSHandler,HTTPRedirectHandler
+    from urllib.request import Request,build_opener,HTTPSHandler,HTTPRedirectHandler,ProxyHandler
     class NoRedirect(HTTPRedirectHandler):
         def redirect_request(self,*args,**kwargs):
             raise WitnessRejected('witness_redirect_denied')
@@ -184,7 +184,9 @@ def https_witness_transport(url:str, *, ssl_context, timeout:float=5.0):
     if parsed.scheme!='https' or not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
         raise WitnessRejected('witness_url_must_be_https')
     if not (0<timeout<=20):raise WitnessRejected('witness_timeout_invalid')
-    opener=build_opener(HTTPSHandler(context=ssl_context),NoRedirect())
+    # Inherited HTTPS_PROXY/HTTP_PROXY is not trusted broker configuration.
+    # Use direct TLS to the explicitly configured witness endpoint.
+    opener=build_opener(ProxyHandler({}),HTTPSHandler(context=ssl_context),NoRedirect())
     def submit(head:dict[str,Any])->dict[str,Any]:
         _head(head)
         req=Request(url,data=_canon(head),headers={'Content-Type':'application/json','Accept':'application/json'},method='POST')
