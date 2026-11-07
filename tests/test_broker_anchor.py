@@ -197,7 +197,7 @@ class TestBrokerIdentity(unittest.TestCase):
         self.operator_socket = root / "operator.sock"
         self.broker = BrokerServer(Gateway(self.policy,self.state,self.backend),self.state,self.policy,
                                    agent_socket=self.agent_socket, operator_socket=self.operator_socket,
-                                   agent_uid=self.AGENT, operator_uid=self.OPERATOR)
+                                   agent_uid=self.AGENT, operator_uid=self.OPERATOR, allow_uid_only_operator=True)
         self.thread = threading.Thread(target=self.broker.serve,daemon=True)
         self.thread.start()
         for _ in range(300):
