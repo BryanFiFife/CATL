@@ -6,7 +6,6 @@ import os
 import sys
 from pathlib import Path
 from .crypto import digest, get_or_create_key, strict_loads
-from .gateway import serve
 from .policy import Policy
 from .store import State
 
@@ -16,8 +15,16 @@ def _state(folder: Path) -> State:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.5")
+    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.6.0 release candidate")
     sub = p.add_subparsers(dest="command", required=True)
+    doctor = sub.add_parser("doctor", help="Preflight Linux broker state, identities and signed audit; no auto-repair")
+    doctor.add_argument("--config", type=Path, required=True)
+    doctor.add_argument("--state-dir", type=Path, required=True)
+    doctor.add_argument("--anchor-path", type=Path, required=True)
+    doctor.add_argument("--agent-uid", type=int, required=True)
+    doctor.add_argument("--operator-uid", type=int, required=True)
+    doctor.add_argument("--backend-uid", type=int, required=True)
+    doctor.add_argument("--strict", action="store_true", help="Treat unverified host controls as blockers")
     run = sub.add_parser("run", help="Run a pinned MCP stdio tool server behind the gateway")
     run.add_argument("--config", required=True, type=Path)
     run.add_argument("--backend-user", help="POSIX: drop child to a distinct non-root account; requires root supervisor")
@@ -90,6 +97,14 @@ def main(argv: list[str] | None = None) -> int:
     pin.add_argument("tool_definition", type=Path)
     args = p.parse_args(argv)
     try:
+        if args.command == "doctor":
+            from .doctor import run_checks
+            output = run_checks(config=args.config, state_dir=args.state_dir,
+                anchor_path=args.anchor_path, agent_uid=args.agent_uid,
+                operator_uid=args.operator_uid, backend_uid=args.backend_uid,
+                strict=args.strict)
+            print(json.dumps(output, indent=2, ensure_ascii=False))
+            return 0 if output["ok"] else 2
         if args.command == "overlay":
             from .overlay import launch
             if args.operator_socket and not args.unsafe_direct_state:
@@ -222,6 +237,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"name": data["name"], "sha256": digest(data)}, indent=2))
             return 0
         if args.command == "run":
+            from .gateway import serve
             command = args.backend[1:] if args.backend and args.backend[0] == "--" else args.backend
             if not command:
                 p.error("a backend command is required after --")

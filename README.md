@@ -5,8 +5,8 @@
 
 **Local-first · Harness-independent · Default-deny · Human-controlled**
 
-![Release](https://img.shields.io/badge/release-v0.5.0-7c3aed?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Linux_tests-179_passed-16a34a?style=for-the-badge)
+![Release](https://img.shields.io/badge/release-v0.6.0rc1-7c3aed?style=for-the-badge)
+![Tests](https://img.shields.io/badge/Linux_tests-200_passed-16a34a?style=for-the-badge)
 ![Broker](https://img.shields.io/badge/Linux_broker-rootless_UID_auth-087f8c?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-tool_subset-2563eb?style=for-the-badge)
 ![Security](https://img.shields.io/badge/default-DENY-dc2626?style=for-the-badge)
@@ -47,7 +47,18 @@ flowchart TD
   R --> S[✅ Result / ⚠️ uncertain / ❌ failure]
 ```
 
-## ✨ What's in v0.5.0?
+## 🧪 Release candidate: v0.6.0rc1
+
+**Candidate status: not yet general availability.** Windows protected process isolation,
+independent pen testing, confirmed remote CI, full modern MCP conformance and remote
+side-effect verification remain unpassed release gates. See
+[release gates](docs/RELEASE_GATES_V06.md) and [security review](docs/SECURITY_AUDIT_V06.md).
+
+**New:** authenticated rate-limits (no unsigned SQLite counter bypass), trusted backend
+initialization, streamed audit-chain verification, a safe `path_within` policy condition,
+and `catl doctor` Linux deployment checks. Review [change log](docs/CHANGES_V06.md).
+
+## ✨ What's in v0.6.0rc1?
 
 | Capability | Evidence / limits |
 |---|---|
@@ -102,7 +113,7 @@ Running this waits for MCP JSON-RPC input from your harness. It does not start a
 
 No service needs root **during normal operation**. A trusted administrator still provisions accounts, groups, directories and OS service restrictions. The rootless design was tested using four distinct synthetic UIDs and three separate socket groups in a disposable Linux test environment.
 
-**🔧 [Read the complete v0.5 rootless deployment guide](docs/DEPLOY_ROOTLESS_LINUX.md).** This includes the startup sequence and required ownership/modes. Misconfigured group access or shared OS identities defeat the intended separation. A restricted UID is not a complete sandbox.
+**🔧 [Read the rootless deployment guide](docs/DEPLOY_ROOTLESS_LINUX.md).** This includes the startup sequence and required ownership/modes. Misconfigured group access or shared OS identities defeat the intended separation. A restricted UID is not a complete sandbox.
 
 ### 🔁 How approval works
 
@@ -127,13 +138,13 @@ xvfb-run -a env PYTHONPATH=src python -m unittest discover -s tests -q
 PYTHONPATH=src python tests/integration_rootless_e2e.py
 ```
 
-**Evidence:** 179 unit/regression tests passed locally under Linux / Python 3.13.5 with Xvfb, plus a real unprivileged four-UID broker ↔ backend ↔ agent ↔ operator exercise. The root test verified operator-channel denial, tool execution, one-use approval, audit validity and signing-key access denial. No independent penetration test or passing GitHub Actions matrix is claimed yet.
+**Evidence:** 200 unit/regression tests passed locally under Linux / Python 3.13.5 with Xvfb, plus a real unprivileged four-UID broker ↔ backend ↔ agent ↔ operator exercise. The root test verified operator-channel denial, tool execution, one-use approval, audit validity and signing-key access denial. No independent penetration test or passing GitHub Actions matrix is claimed yet.
 
-🧪 [v0.5 audit](docs/SECURITY_AUDIT_V05.md) · 🐧 [Rootless deployment](docs/DEPLOY_ROOTLESS_LINUX.md) · 🗒️ [Release notes](docs/RELEASE_NOTES_V05.md) · 🔐 [Responsible disclosure](SECURITY.md)
+🧪 [v0.6.0rc1 audit](docs/SECURITY_AUDIT_V05.md) · 🐧 [Rootless deployment](docs/DEPLOY_ROOTLESS_LINUX.md) · 🗒️ [Release notes](docs/RELEASE_NOTES_V05.md) · 🔐 [Responsible disclosure](SECURITY.md)
 
 ## 🪟 Windows and macOS
 
-- **Windows:** the existing unisolated demonstration can be run intentionally, but the v0.5 *protected broker* is **not supported**. Before consequential deployment it needs tested AppContainer/restricted-token isolation, secured named-pipe/ACL operator channels, Job Objects, and anti-UI-spoofing controls. Microsoft documents AppContainer as an OS-enforced security boundary.
+- **Windows:** the existing unisolated demonstration can be run intentionally, but the v0.6.0rc1 *protected broker* is **not supported**. Before consequential deployment it needs tested AppContainer/restricted-token isolation, secured named-pipe/ACL operator channels, Job Objects, and anti-UI-spoofing controls. Microsoft documents AppContainer as an OS-enforced security boundary.
 - **macOS:** direct demo and general policy components can be evaluated, but the current kernel-credential broker transport is Linux-only. macOS identity-pinned transport and sandbox verification remain open work.
 
 Windows references: [Microsoft AppContainer isolation](https://learn.microsoft.com/en-us/windows/win32/secauthz/appcontainer-isolation), [CreateRestrictedToken](https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-createrestrictedtoken).
@@ -156,6 +167,23 @@ CATL is designed to complement rather than replace [AgentInterdict](https://gith
 - [ ] 🌐 Full MCP current/legacy interoperability, modern upstream backend and SDK conformance
 - [ ] 🧾 Remote API/email/payment read-after-write and idempotent reconciliation
 - [ ] 🏛️ Remote/hardware-backed audit anchors, signed reproducible releases, SBOM review and external penetration tests
+
+## 🩺 Broker preflight (Linux)
+
+Run as the *broker* OS account **after** initial state and external checkpoint
+provisioning, and before arming any tools:
+
+```bash
+catl doctor --config /etc/catl/policy.json \
+  --state-dir /var/lib/catl/state \
+  --anchor-path /var/lib/catl-anchor/head.json \
+  --agent-uid 10021 --operator-uid 10022 --backend-uid 10023
+```
+
+Replace example UIDs with the actual distinct host accounts. Output is JSON with
+explicit failures and warnings. The `--strict` flag additionally treats unverified
+host-isolation assurances as blockers. This diagnostic cannot prove the host is
+secure; it never repairs or recreates a missing key or checkpoint.
 
 ## ⚖️ Security and licensing
 
