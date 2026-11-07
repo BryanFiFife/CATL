@@ -1,0 +1,23 @@
+# Security secrets and local mutable state
+*.key
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.anchor
+*.sock
+*.pem
+.env
+.env.*
+# Tool output and runtime scratch
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+*.log
+!reports/*.txt
+coverage.xml
+.coverage
+.DS_Store
