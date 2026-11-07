@@ -173,6 +173,19 @@ class SignedOperatorTests(unittest.TestCase):
             agent_socket=root/'agent.sock', operator_socket=root/'operator.sock',
             agent_uid=self.uid+5000,operator_uid=self.uid, allow_test_same_uid=True,
             operator_public_key=self.public)
+        # This is a SAME-UID unit fixture, not the four-UID security integration.
+        # The synthetic agent UID must remain different for SO_PEERCRED checks,
+        # but an unprivileged CI runner cannot chown the agent socket to it.
+        # Create both fixture sockets as the test UID, retaining mode 0600;
+        # BrokerServer still rejects any agent connection with the wrong UID.
+        # Separate-UID socket ownership is exercised in integration_rootless_e2e.py.
+        from catl.broker import _prepare_socket as actual_prepare_socket
+        def prepare_user_owned_fixture_socket(path, uid, gid, *, group_access=False):
+            return actual_prepare_socket(path, os.geteuid(), os.getegid())
+        fixture_patch = patch('catl.broker._prepare_socket',
+                              side_effect=prepare_user_owned_fixture_socket)
+        fixture_patch.start()
+        self.addCleanup(fixture_patch.stop)
         server=threading.Thread(target=broker.serve,daemon=True);server.start()
         self.addCleanup(lambda: (broker.shutdown(),server.join(timeout=3)))
         for _ in range(150):
