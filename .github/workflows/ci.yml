@@ -92,7 +92,7 @@ jobs:
           # Stage only public test source outside the runner's private home.
           stage="$(mktemp -d /tmp/catl-identity-ci.XXXXXXXX)"
           trap 'sudo rm -rf "$stage"' EXIT
-          cp -R src tests examples "$stage/"
+          cp -R src tests examples tools "$stage/"
           chmod -R a+rX "$stage"
           sudo env "PYTHONPATH=$stage/src" "$(command -v python)" "$stage/tests/integration_rootless_e2e.py"
       - name: Red-team agent-flood must not block operator emergency access

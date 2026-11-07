@@ -126,6 +126,17 @@ def main():
                   '--agent-gid',str(G_AGENT),'--operator-gid',str(G_OPERATOR),
                   '--backend-socket',str(backend_sock),'--backend-uid',str(UID_BACKEND)])
             wait_socket(agent_sock, broker); wait_socket(op_sock,broker)
+            # Exercise the actual MCP stdio shim under the agent UID.
+            # This verifies wire framing and routing, not just reply validation.
+            def smoke(expect, tool='echo_safe'):
+                out = run_as(UID_AGENT, [G_AGENT],
+                    [sys.executable, str(ROOT/'tools/hermes_mcp_smoke.py'),
+                     '--agent-socket', str(agent_sock), '--expect', expect,
+                     '--tool', tool])
+                assert out.returncode == 0, (out.stdout, out.stderr)
+                parsed = json.loads(out.stdout)
+                assert parsed['passed'] is True and parsed['mode'] == expect, parsed
+            smoke('disarmed')
             def op(payload):
                 # The real operator CLI signs one-time challenges; no software
                 # private key is readable by the broker, tool, or agent UID.
@@ -147,12 +158,14 @@ print(json.dumps({'ok':True,'result':client._rpc(json.loads(sys.argv[3]))}))"""
                 {'op':'set_feature','feature':'gateway_enabled','enabled':True})
             assert forged.returncode==0 and json.loads(forged.stdout)['ok'] is False, forged
             assert op({'op':'set_feature','feature':'gateway_enabled','enabled':True})['ok']
+            smoke('armed')
             allowed=call('echo_safe','hello rootless');assert allowed['result']['content'][0]['text']=='hello rootless',allowed
             pending=call('write_demo','safe test data');assert pending['error']['message']=='human_approval_required',pending
             req=op({'op':'pending'})['result']['requests'];assert len(req)==1,req
             assert op({'op':'decide','id':req[0]['id'],'approve':True})['result']['accepted']
             done=call('write_demo','safe test data');assert done.get('result',{}).get('content',[{}])[0].get('text')=='written',done
             reused=call('write_demo','safe test data');assert reused['error']['message']=='human_approval_required',reused
+            smoke('approval-required', tool='write_demo')
             blocked=ipc(UID_AGENT,[G_AGENT],op_sock,{'op':'set_feature','feature':'gateway_enabled','enabled':False})
             assert blocked.returncode != 0 or not blocked.stdout.strip(),blocked
             blocked=ipc(UID_OPERATOR,[G_OPERATOR],agent_sock,{'jsonrpc':'2.0','id':8,'method':'ping'})
@@ -160,7 +173,7 @@ print(json.dumps({'ok':True,'result':client._rpc(json.loads(sys.argv[3]))}))"""
             assert op({'op':'verify'})['result']['valid']
             unpriv=run_as(UID_BACKEND,[G_BACKEND],[sys.executable,'-c','import pathlib,sys;pathlib.Path(sys.argv[1]).read_bytes()',str(paths['state']/'audit.key')])
             assert unpriv.returncode!=0,unpriv
-            print('PASS rootless Linux 4-UID signed E2E: unsigned-forgery denial, tool call, approval/replay, audit, channel isolation, key denial', flush=True)
+            print('PASS rootless Linux four-UID signed E2E + real shim MCP stdio: disarm, echo, approval/replay, audit, channel/key denial', flush=True)
             return 0
         finally:
             # No communicate(): backend descendants might inherit a pipe and block EOF.
