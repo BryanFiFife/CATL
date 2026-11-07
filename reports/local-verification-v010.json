@@ -1,0 +1,20 @@
+{
+  "release": "0.10.0rc1",
+  "date": "2026-11-07",
+  "local_full_suite": {
+    "tests": 260,
+    "failures": 0,
+    "errors": 0,
+    "linux_xvfb": true
+  },
+  "internal_red_team": {
+    "v09_confirmed_failures": 3,
+    "candidate_targeted_tests": 11,
+    "targeted_pass": true
+  },
+  "static_sanity": "PASS",
+  "root_peer_credentials_integration": "PASS (local adversarial cross-UID reserved operator channel)",
+  "github_ci": "PENDING at time of source snapshot",
+  "production_ga": false,
+  "independent_pentest": false
+}
