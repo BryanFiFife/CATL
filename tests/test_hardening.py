@@ -227,7 +227,7 @@ class PostconditionTests(unittest.TestCase):
         result = self.gw.handle(packet('tools/call', self.args()))
         self.assertIn('result', result)
         self.assertEqual(self.backend.file_path.read_bytes(), b'hello')
-        self.assertEqual(self.state.verify()['count'], 4)
+        self.assertEqual(self.state.verify()['count'], 5)  # includes signed rate permit
 
     def test_changed_backend_output_refused(self):
         args = self.args(sha='0'*64)

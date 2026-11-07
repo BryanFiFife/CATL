@@ -170,11 +170,11 @@ class TestControls(unittest.TestCase):
         self.state.set_feature("approvals_enabled", False, "operator")
         self.assertEqual(self.gw.handle(req("sensitive"))["error"]["message"], "approvals_disabled_by_operator")
 
-    def test_legacy_initialized_forwarded_after_initialize(self):
+    def test_legacy_initialized_is_handled_locally(self):
         self.gw.handle({"jsonrpc":"2.0", "id":7, "method":"initialize", "params":{"protocolVersion":"2025-11-25"}})
         self.assertEqual(self.backend.notifies, [])
         self.gw.handle({"jsonrpc":"2.0", "method":"notifications/initialized"})
-        self.assertEqual(self.backend.notifies, ["notifications/initialized"])
+        self.assertEqual(self.backend.notifies, [])
 
     def test_modern_tool_list_zero_cache(self):
         params = {"_meta": {"io.modelcontextprotocol/protocolVersion":"2026-07-28",

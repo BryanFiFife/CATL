@@ -75,7 +75,7 @@ class TestGateway(unittest.TestCase):
         out = self.gateway.handle(request("tools/call", params={"name": "echo_safe", "arguments": {"message": "hello world"}}))
         self.assertIn("result", out)
         self.assertEqual(len([x for x in self.backend.calls if x[0] == "tools/call"]), 1)
-        self.assertEqual(self.state.verify()["count"], 3)
+        self.assertEqual(self.state.verify()["count"], 4)  # includes signed rate-permit receipt
 
     def test_tool_denied(self):
         out = self.gateway.handle(request("tools/call", params={"name": "echo_safe", "arguments": {"message": "bad"}}))
@@ -118,10 +118,10 @@ class TestGateway(unittest.TestCase):
     def test_block_prompt_method(self):
         self.assertEqual(self.gateway.handle(request("prompts/get"))["error"]["code"], -32601)
 
-    def test_initialized_notification_forwarded(self):
+    def test_initialized_notification_is_not_client_authority(self):
         out = self.gateway.handle({"jsonrpc": "2.0", "method": "notifications/initialized"})
         self.assertIsNone(out)
-        self.assertEqual(self.backend.notify_calls, ["notifications/initialized"])
+        self.assertEqual(self.backend.notify_calls, [])
 
     def test_other_notifications_not_forwarded(self):
         self.gateway.handle({"jsonrpc": "2.0", "method": "notifications/cancelled"})
