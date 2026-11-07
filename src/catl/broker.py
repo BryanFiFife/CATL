@@ -98,7 +98,8 @@ class BrokerServer:
     def __init__(self, gateway: Gateway, state: State, policy: Policy, *, agent_socket: Path,
                  operator_socket: Path, agent_uid: int, operator_uid: int,
                  allow_test_same_uid: bool = False, agent_gid: int | None = None,
-                 operator_gid: int | None = None):
+                 operator_gid: int | None = None, operator_public_key: Path | None = None,
+                 allow_uid_only_operator: bool = False):
         if sys.platform != "linux":
             raise PermissionError("broker_requires_linux_so_peercred")
         current_uid = os.geteuid()
@@ -110,7 +111,13 @@ class BrokerServer:
             raise ValueError("broker_channels_must_be_distinct")
         if state.anchor is None and not allow_test_same_uid:
             raise PermissionError("anchored_broker_state_required")
+        if operator_public_key is None and not (allow_test_same_uid or allow_uid_only_operator):
+            raise PermissionError("operator_public_key_required_for_protected_broker")
         self.gateway = gateway
+        self.operator_authorizer = None
+        if operator_public_key is not None:
+            from .operator_auth import OperatorAuthorizer
+            self.operator_authorizer = OperatorAuthorizer(operator_public_key)
         self.state = state
         self.policy = policy
         self.agent_socket = Path(agent_socket)
@@ -134,11 +141,24 @@ class BrokerServer:
         }
         self._sockets: list[socket.socket] = []
 
-    def _op(self, msg: dict[str, Any], uid: int) -> dict[str, Any]:
+    def _op(self, msg: dict[str, Any], uid: int, *, authorized: bool = False) -> dict[str, Any]:
         name = msg.get("op")
         actor = f"uid:{uid}"
         if not isinstance(name, str) or len(json.dumps(msg, ensure_ascii=False)) > 65536:
             raise ValueError("invalid_operator_request")
+        if name == "challenge":
+            if self.operator_authorizer is None:
+                raise PermissionError("operator_signatures_not_configured")
+            return self.operator_authorizer.issue(msg.get("command"), uid)
+        if name == "authorize":
+            if self.operator_authorizer is None:
+                raise PermissionError("operator_signatures_not_configured")
+            command = self.operator_authorizer.verify_and_consume(
+                msg.get("command"), uid, msg.get("challenge"), msg.get("signature"))
+            return self._op(command, uid, authorized=True)
+        from .operator_auth import signature_required
+        if self.operator_authorizer is not None and signature_required(msg) and not authorized:
+            raise PermissionError("signed_operator_authorization_required")
         if name == "status":
             return {"controls": self.state.controls(), "tools": sorted(self.policy.tool_pins),
                     "audit": self.state.verify(), "protocol": "CATL/OPERATOR/v1"}
@@ -152,13 +172,16 @@ class BrokerServer:
             return {"accepted": self.state.reconcile_incident(
                 msg.get("action_id"), actor, msg.get("reference"), msg.get("acknowledgement"))}
         if name == "set_feature":
-            return {"controls": self.state.set_feature(msg.get("feature"), msg.get("enabled"), actor)}
+            with self.gateway.dispatch_gate:
+                return {"controls": self.state.set_feature(msg.get("feature"), msg.get("enabled"), actor)}
         if name == "set_tool":
-            return {"controls": self.state.set_tool(msg.get("tool"), msg.get("enabled"), actor,
-                      set(self.policy.tool_pins))}
+            with self.gateway.dispatch_gate:
+                return {"controls": self.state.set_tool(msg.get("tool"), msg.get("enabled"), actor,
+                          set(self.policy.tool_pins))}
         if name == "set_all_tools":
-            return {"controls": self.state.set_all_tools(msg.get("enabled"), actor,
-                      set(self.policy.tool_pins))}
+            with self.gateway.dispatch_gate:
+                return {"controls": self.state.set_all_tools(msg.get("enabled"), actor,
+                          set(self.policy.tool_pins))}
         if name == "decide":
             identifier, approve = msg.get("id"), msg.get("approve")
             if not isinstance(identifier, str) or len(identifier) > 128 or type(approve) is not bool:
@@ -291,11 +314,41 @@ def _exchange(sock_path: Path, payload: dict[str, Any], timeout: float = 10) -> 
 
 class OperatorClient:
     """Thin trusted GUI client; never opens the database or HMAC key."""
-    def __init__(self, socket_path: Path):
+    def __init__(self, socket_path: Path, *, signing_key: Path | None = None):
         self.socket_path = Path(socket_path)
+        self.signer = None
+        if signing_key is not None:
+            from .operator_auth import SoftwareOperatorSigner
+            self.signer = SoftwareOperatorSigner(signing_key)
 
     def _rpc(self, command: dict[str, Any]) -> dict[str, Any]:
-        reply = _exchange(self.socket_path, command)
+        from .operator_auth import signature_required
+        if self.signer is not None and signature_required(command):
+            first = _exchange(self.socket_path, {"op": "challenge", "command": command})
+            if first.get("ok") is not True:
+                raise PermissionError("operator_challenge_rejected")
+            challenge = first.get("result")
+            if not isinstance(challenge, dict):
+                raise PermissionError("operator_challenge_invalid_response")
+            token = challenge.get("challenge")
+            message_hex = challenge.get("message_hex")
+            if (challenge.get("scheme") != "Ed25519/CATL-OPERATOR-AUTH-v1"
+                    or not isinstance(token, str) or len(token) != 48
+                    or not isinstance(message_hex, str)
+                    or not all(c in "0123456789abcdef" for c in token)):
+                raise PermissionError("operator_challenge_invalid_response")
+            # Never treat a broker-supplied byte string as a signing instruction.
+            # Bind the locally held command, peer identity and received token
+            # independently before passing ANY bytes to the private key.
+            from .operator_auth import OperatorAuthorizer
+            expected = OperatorAuthorizer._data(command, os.geteuid(), token).hex()
+            if message_hex != expected:
+                raise PermissionError("operator_challenge_command_mismatch")
+            reply = _exchange(self.socket_path, {"op": "authorize", "command": command,
+                "challenge": token,
+                "signature": self.signer.sign_hex(expected)})
+        else:
+            reply = _exchange(self.socket_path, command)
         if reply.get("ok") is not True:
             raise PermissionError("broker_" + str(reply.get("error", "rejected")))
         return reply["result"]

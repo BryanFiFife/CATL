@@ -15,7 +15,7 @@ def _state(folder: Path) -> State:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.10.0rc1 Linux incident-quarantine candidate")
+    p = argparse.ArgumentParser(prog="catl", description="Caledapt Agent Trust Layer, v0.11.0rc1 Linux signed-operator candidate")
     sub = p.add_subparsers(dest="command", required=True)
     doctor = sub.add_parser("doctor", help="Preflight Linux broker state, identities and signed audit; no auto-repair")
     doctor.add_argument("--config", type=Path, required=True)
@@ -53,6 +53,7 @@ def main(argv: list[str] | None = None) -> int:
     overlay.add_argument("--config", type=Path, help="Legacy demo: policy location")
     overlay.add_argument("--unsafe-direct-state", action="store_true", help="DEMO ONLY; direct access to broker signing key")
     overlay.add_argument("--no-topmost", action="store_true", help="Don't keep window floating above other windows")
+    overlay.add_argument("--signing-key", type=Path, help="Evaluation software operator signing key; NOT hardware presence")
     anchor = sub.add_parser("anchor-init", help="Explicitly create a protected, independent audit checkpoint")
     anchor.add_argument("--state-dir", type=Path, required=True)
     anchor.add_argument("--anchor-path", type=Path, required=True)
@@ -65,6 +66,8 @@ def main(argv: list[str] | None = None) -> int:
     broker.add_argument("--operator-socket", type=Path, required=True)
     broker.add_argument("--agent-uid", type=int, required=True)
     broker.add_argument("--operator-uid", type=int, required=True)
+    broker.add_argument("--operator-public-key", type=Path, help="Secure default: pinned Ed25519 operator public key for privilege grants")
+    broker.add_argument("--allow-uid-only-operator", action="store_true", help="UNSAFE LEGACY EVALUATION: disable signature requirement")
     broker.add_argument("--backend-user", help="Legacy root-only supervised subprocess identity")
     broker.add_argument("--backend-socket", type=Path, help="v0.5: connect to an independently supervised backend socket")
     broker.add_argument("--backend-uid", type=int, help="v0.5: expected backend service kernel UID")
@@ -84,6 +87,7 @@ def main(argv: list[str] | None = None) -> int:
     shim.add_argument("--agent-socket", type=Path, required=True)
     operator = sub.add_parser("operator", help="Trusted admin RPC; never reads the audit key")
     operator.add_argument("--operator-socket", type=Path, required=True)
+    operator.add_argument("--signing-key", type=Path, help="Evaluation software signing key for protected RPC")
     op = operator.add_subparsers(dest="operation", required=True)
     for command in ("status", "pending", "verify", "incidents"):
         op.add_parser(command)
@@ -101,10 +105,19 @@ def main(argv: list[str] | None = None) -> int:
     for command in ("approve", "reject"):
         item = op.add_parser(command)
         item.add_argument("id")
+    keys = sub.add_parser("operator-keygen", help="Create non-overwriting EVALUATION-ONLY software Ed25519 keypair")
+    keys.add_argument("--private-key", type=Path, required=True)
+    keys.add_argument("--public-key", type=Path, required=True)
     pin = sub.add_parser("pin", help="Print SHA-256 pin for a reviewed MCP tool definition")
     pin.add_argument("tool_definition", type=Path)
     args = p.parse_args(argv)
     try:
+        if args.command == "operator-keygen":
+            from .operator_auth import generate_test_software_keypair
+            generate_test_software_keypair(args.private_key,args.public_key)
+            print(json.dumps({"public_key":str(args.public_key),"private_key":str(args.private_key),
+                   "assurance":"software_key_only_not_physical_user_presence"}))
+            return 0
         if args.command == "host-audit":
             from .host_audit import run as host_audit_run
             result = host_audit_run(args.broker_unit, args.backend_unit, args.broker_user, args.backend_user)
@@ -121,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "overlay":
             from .overlay import launch
             if args.operator_socket and not args.unsafe_direct_state:
-                return launch(operator_socket=args.operator_socket, topmost=not args.no_topmost)
+                return launch(operator_socket=args.operator_socket, signing_key=args.signing_key, topmost=not args.no_topmost)
             if args.unsafe_direct_state and not args.operator_socket and args.state_dir and args.config:
                 return launch(state_dir=args.state_dir, config=args.config, direct_state=True,
                               topmost=not args.no_topmost)
@@ -211,7 +224,9 @@ def main(argv: list[str] | None = None) -> int:
                 supervisor = BrokerServer(Gateway(policy, state, backend), state, policy,
                                           agent_socket=args.agent_socket, operator_socket=args.operator_socket,
                                           agent_uid=args.agent_uid, operator_uid=args.operator_uid,
-                                          agent_gid=args.agent_gid, operator_gid=args.operator_gid)
+                                          agent_gid=args.agent_gid, operator_gid=args.operator_gid,
+                                          operator_public_key=args.operator_public_key,
+                                          allow_uid_only_operator=args.allow_uid_only_operator)
                 import signal
                 signal.signal(signal.SIGTERM, lambda _sig, _frame: supervisor.shutdown())
                 signal.signal(signal.SIGINT, lambda _sig, _frame: supervisor.shutdown())
@@ -221,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "operator":
             from .broker import OperatorClient
-            client = OperatorClient(args.operator_socket)
+            client = OperatorClient(args.operator_socket, signing_key=args.signing_key)
             if args.operation in ("status", "verify", "pending", "incidents"):
                 result = (client.status() if args.operation == "status" else
                           client.verify() if args.operation == "verify" else
