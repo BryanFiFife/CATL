@@ -53,7 +53,8 @@ jobs:
       - name: Run graphical tests
         run: xvfb-run -a python -m unittest discover -s tests -q
       - name: Run separate-UID broker integration
-        run: sudo env PYTHONPATH=src python tests/integration_rootless_e2e.py
+        shell: bash
+        run: sudo env "PATH=$PATH" "PYTHONPATH=$GITHUB_WORKSPACE/src" "$(command -v python)" tests/integration_rootless_e2e.py
 
   package-smoke:
     runs-on: ubuntu-latest

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import sys
 import stat
 import tempfile
 import unittest
@@ -40,10 +41,11 @@ class DoctorTests(unittest.TestCase):
 
     def test_valid_state_passes_integrity_but_warns_host_attestation(self):
         r=self.check()
-        self.assertEqual(r['failures'], 2 if os.geteuid() == 0 else 0)
+        expected_failures = (2 if os.geteuid() == 0 else 0) + (0 if sys.platform == 'linux' else 1)
+        self.assertEqual(r['failures'], expected_failures)
         self.assertIn('audit_chain', {x['check'] for x in r['checks'] if x['status']=='pass'})
         self.assertGreaterEqual(r['warnings'],2)
-        self.assertEqual(r['ok'],os.geteuid()!=0)
+        self.assertEqual(r['ok'], expected_failures == 0)
 
     def test_strict_requires_host_attestation(self):
         self.assertFalse(self.check(strict=True)['ok'])

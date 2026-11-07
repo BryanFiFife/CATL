@@ -1,7 +1,7 @@
 {
   "algorithm": "sha256",
   "files": {
-    ".github/workflows/ci.yml": "4343609c1dd952915ba4915988c7a82d795f96bf3f3ca6af95406ad5a665b2a6",
+    ".github/workflows/ci.yml": "bde7f72d2b81b05de0c83b2d745ef5808e0ef999f51e8faa93416b3562f94c72",
     ".gitignore": "6da1d231e058ed3aaac3518dff20faf1de17e8640dc003cfc4d58fc6c8b8a708",
     "LICENSE": "c451d5b483c2bc3cb0b451c9c6ad63b1e1de4fbe3dc7ed83fbd5290adede0ef9",
     "README.md": "1c52f2ffebe79f23a6273aafad5fcafdfc5678834bf7f8cd7f893b5f8d0a9295",
@@ -59,7 +59,7 @@
     "tests/integration_rootless_e2e.py": "56acb08081cd945769fbf552fc88c77a9c6a09d43b916ac4d96686fc17ecb0bb",
     "tests/test_broker_anchor.py": "3aaa0d87c815a9156fb27158846bb8a65dcb8536acb561ee6978d300c5bb03b3",
     "tests/test_controls_overlay.py": "433793edc126f823cfb1d9b28bb80d2bbf8c65434f56c63fe3f2c9e7d379f64e",
-    "tests/test_doctor.py": "343082254debc598374dab9d8b4ae2612c684e618379cea7262fe2df7edb9a76",
+    "tests/test_doctor.py": "c292642e604caf5d2f5ab9bb472803442c88ae19bec4ecb5caca11e0d56a2149",
     "tests/test_gateway.py": "dff97f6635ad8a487cd8f8d8e28b833dd0d89088e5d92f840913126e672e8c94",
     "tests/test_hardening.py": "a01c519ebed8cb60aa86f0674c90af15c6fa30869be3d4274a89a43a431b50bd",
     "tests/test_modern_stdio.py": "5adf92b6bc7850827fd434b12bf6e823d6f51089c57029eeaa7b7dd93288d961",
