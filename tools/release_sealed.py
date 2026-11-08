@@ -16,6 +16,7 @@ import re
 import stat
 import subprocess
 import sys
+import zipfile
 
 from verify_source_artifact import verify_source_artifact
 
@@ -129,11 +130,23 @@ def _verified_signing_toolchain(checkout: Path, reviewed_commit: str) -> None:
         raise ReleaseGateDenied('signing_toolchain_source_unavailable') from exc
 
 
-def _source_proof(archive: Path, checkout: Path, reviewed_commit: str) -> dict:
+def _source_proof(archive: Path, checkout: Path, reviewed_commit: str,
+                  expected_version: str) -> dict:
     if not COMMIT_RE.fullmatch(reviewed_commit):
         raise ReleaseGateDenied('independently_reviewed_commit_required')
+    if not isinstance(expected_version, str) or not re.fullmatch(
+            r'[A-Za-z0-9][A-Za-z0-9._+-]{0,63}', expected_version):
+        raise ReleaseGateDenied('expected_release_version_required')
     _safe_existing_file(archive)
-    return verify_source_artifact(archive, checkout, reviewed_commit)
+    proof = verify_source_artifact(archive, checkout, reviewed_commit)
+    # A signature is a public assertion of an exact software version. The
+    # source-equivalence verifier already checks archive manifest/pyproject
+    # parity; additionally bind the operator-supplied version to that archive.
+    with zipfile.ZipFile(archive) as z:
+        packaged_version = json.loads(z.read('RELEASE_MANIFEST.json'))['version']
+    if packaged_version != expected_version:
+        raise ReleaseGateDenied('release_attestation_version_mismatch')
+    return proof
 
 
 def sign_checked(*, archive: Path, checkout: Path, reviewed_commit: str,
@@ -148,7 +161,7 @@ def sign_checked(*, archive: Path, checkout: Path, reviewed_commit: str,
     _safe_signing_inputs(archive, private_key, checkout)
     _check_trust_pin(public_key, expected_key_fingerprint)
     _verified_signing_toolchain(checkout, reviewed_commit)
-    before = _source_proof(archive, checkout, reviewed_commit)
+    before = _source_proof(archive, checkout, reviewed_commit, version)
     # Keep the complete original signer and verifier as the cryptographic
     # authority. This wrapper adds an external Git-blob equivalence boundary.
     from release_attest import sign, verify
@@ -161,7 +174,7 @@ def sign_checked(*, archive: Path, checkout: Path, reviewed_commit: str,
         checked = verify(archive, output, public_key,
                          expected_public_key_fingerprint=expected_key_fingerprint,
                          expected_commit=reviewed_commit, expected_version=version)
-        after = _source_proof(archive, checkout, reviewed_commit)
+        after = _source_proof(archive, checkout, reviewed_commit, version)
         _verified_signing_toolchain(checkout, reviewed_commit)
         if (after['archive_sha256'] != before['archive_sha256'] or
                 checked['zip_sha256'] != before['archive_sha256'] or
@@ -187,12 +200,12 @@ def verify_checked(*, archive: Path, checkout: Path, reviewed_commit: str,
     _safe_existing_file(attestation)
     _check_trust_pin(public_key, expected_key_fingerprint)
     _verified_signing_toolchain(checkout, reviewed_commit)
-    before = _source_proof(archive, checkout, reviewed_commit)
+    before = _source_proof(archive, checkout, reviewed_commit, version)
     from release_attest import verify
     result = verify(archive, attestation, public_key,
                     expected_public_key_fingerprint=expected_key_fingerprint,
                     expected_commit=reviewed_commit, expected_version=version)
-    after = _source_proof(archive, checkout, reviewed_commit)
+    after = _source_proof(archive, checkout, reviewed_commit, version)
     _verified_signing_toolchain(checkout, reviewed_commit)
     if (before['archive_sha256'] != after['archive_sha256'] or
             result['zip_sha256'] != before['archive_sha256'] or
