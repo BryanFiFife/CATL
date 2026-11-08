@@ -140,7 +140,7 @@ class LiveMTLSWitnessTests(unittest.TestCase):
         self.server=subprocess.Popen(cmd,stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,stderr=subprocess.PIPE,user=self.server_uid,
             group=self.server_gid,extra_groups=[],cwd=str(self.server_dir),
-            env={'PATH':'/usr/bin:/bin','PYTHONUNBUFFERED':'1'})
+            env={'PATH':'/usr/bin:/bin','PYTHONUNBUFFERED':'1','PYTHONDONTWRITEBYTECODE':'1'})
         for _ in range(60):
             if self.server.poll() is not None:
                 _,err=self.server.communicate(timeout=1)

@@ -133,7 +133,7 @@ class RealMTLSKernelTests(unittest.TestCase):
              '--listen','127.0.0.1','--port',str(cls.port)]
         cls.server=subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,user=cls.uid,group=cls.gid,extra_groups=[],
-            cwd=str(cls.server_dir),env={'PATH':'/usr/bin:/bin','PYTHONUNBUFFERED':'1'})
+            cwd=str(cls.server_dir),env={'PATH':'/usr/bin:/bin','PYTHONUNBUFFERED':'1','PYTHONDONTWRITEBYTECODE':'1'})
         for _ in range(100):
             if cls.server.poll() is not None:
                 stdout,err=cls.server.communicate(timeout=1)

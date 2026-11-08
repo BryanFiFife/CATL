@@ -65,7 +65,7 @@ class Provider:
 ledger.execute_once('1'*32,'payments',payload,Provider())
 '''
         return subprocess.run([sys.executable,'-c',script,str(self.root),phase],
-            env={'PYTHONPATH':str(ROOT/'src'),'PATH':'/usr/bin:/bin'},
+            env={'PYTHONPATH':str(ROOT/'src'),'PATH':'/usr/bin:/bin','PYTHONDONTWRITEBYTECODE':'1'},
             capture_output=True,timeout=8)
     def test_killed_before_send_must_not_auto_retry(self):
         c=self.child('pre_submit')
@@ -88,9 +88,9 @@ ledger.execute_once('1'*32,'payments',payload,Provider())
     def test_two_independent_processes_same_action_submit_once(self):
         # Two distinct processes acquire the same durable fcntl lock.
         with subprocess.Popen([sys.executable,'-c',self._concurrent_script(),str(self.root)],
-             env={'PYTHONPATH':str(ROOT/'src'),'PATH':'/usr/bin:/bin'},stdout=subprocess.PIPE,stderr=subprocess.PIPE) as a:
+             env={'PYTHONPATH':str(ROOT/'src'),'PATH':'/usr/bin:/bin','PYTHONDONTWRITEBYTECODE':'1'},stdout=subprocess.PIPE,stderr=subprocess.PIPE) as a:
             with subprocess.Popen([sys.executable,'-c',self._concurrent_script(),str(self.root)],
-                 env={'PYTHONPATH':str(ROOT/'src'),'PATH':'/usr/bin:/bin'},stdout=subprocess.PIPE,stderr=subprocess.PIPE) as b:
+                 env={'PYTHONPATH':str(ROOT/'src'),'PATH':'/usr/bin:/bin','PYTHONDONTWRITEBYTECODE':'1'},stdout=subprocess.PIPE,stderr=subprocess.PIPE) as b:
                 ea=a.communicate(timeout=8)[1];eb=b.communicate(timeout=8)[1]
                 self.assertEqual((a.returncode,b.returncode),(0,0),(ea,eb))
         self.assertEqual(self.provider.sends.read_text().splitlines(),['1'])
