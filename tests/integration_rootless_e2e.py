@@ -26,7 +26,12 @@ G_AGENT = 26202
 G_OPERATOR = 26203
 G_BACKEND = 26204
 PYTHONPATH = str(ROOT / 'src')
-ENV = {**os.environ, 'PYTHONPATH': PYTHONPATH, 'PYTHONDONTWRITEBYTECODE': '1'}
+# A privileged E2E host may hold deployment credentials. Never export the
+# launcher's environment into the agent, operator or backend test identities.
+# Fixed PATH also prevents executable substitution during setpriv launch.
+ENV = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8',
+       'PYTHONPATH': PYTHONPATH, 'PYTHONDONTWRITEBYTECODE': '1',
+       'PYTHONNOUSERSITE': '1', 'PYTHONSAFEPATH': '1'}
 
 
 def as_identity(uid, groups, cmd):
@@ -83,6 +88,10 @@ def ensure_permissions(root):
 
 
 def main():
+    # This integration harness deliberately uses assert for security invariants.
+    # -O removes assert bytecode; refusing it is mandatory before any UID work.
+    if not __debug__:
+        raise RuntimeError('integration_assertions_disabled')
     if sys.platform != 'linux' or os.geteuid()!=0 or not shutil.which('setpriv'):
         print('SKIP: needs disposable Linux root test host and setpriv')
         return 77
