@@ -28,7 +28,7 @@ MAX_FILES = 4096
 
 def _git(root: Path, *args: str) -> bytes:
     try:
-        return subprocess.run(['git', '-C', str(root), *args],
+        return subprocess.run(['git', '--no-replace-objects', '-C', str(root), *args],
                               check=True, capture_output=True, timeout=30).stdout
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError('source_git_checkout_or_object_unavailable') from exc

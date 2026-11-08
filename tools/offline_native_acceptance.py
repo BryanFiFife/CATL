@@ -24,13 +24,13 @@ MAX_NATIVE_LOG_BYTES = 32 * 1024 * 1024
 
 
 def _git(repo: Path, *args: str) -> str:
-    process = subprocess.run(["git", *args], cwd=repo, check=True,
+    process = subprocess.run(["git", "--no-replace-objects", *args], cwd=repo, check=True,
                              capture_output=True, timeout=15)
     return process.stdout.decode("utf-8", "strict").strip()
 
 
 def _git_files(repo: Path) -> set[str]:
-    proc = subprocess.run(["git", "ls-files", "-z"], cwd=repo, check=True,
+    proc = subprocess.run(["git", "--no-replace-objects", "ls-files", "-z"], cwd=repo, check=True,
                           capture_output=True, timeout=15)
     return {part.decode("utf-8", "strict") for part in proc.stdout.split(b"\0") if part}
 
@@ -79,7 +79,7 @@ def verify_exact_git_source(repo: Path, commit: str) -> dict:
         raise ValueError('native_source_git_object_format_invalid')
     if _git(repo, 'rev-parse', 'HEAD') != commit:
         raise ValueError('native_source_head_changed')
-    tree = subprocess.run(['git', 'ls-tree', '-r', '-z', '--full-tree', commit],
+    tree = subprocess.run(['git', '--no-replace-objects', 'ls-tree', '-r', '-z', '--full-tree', commit],
                           cwd=repo, capture_output=True, check=True, timeout=15).stdout
     expected: dict[str, tuple[str, bytes]] = {}
     for entry in tree.split(b'\0'):

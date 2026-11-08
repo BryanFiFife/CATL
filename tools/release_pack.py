@@ -85,7 +85,7 @@ def _sensitive_name(name: str) -> bool:
 
 def _git(*args: str) -> bytes:
     try:
-        return subprocess.run(['git', *args], cwd=ROOT, capture_output=True,
+        return subprocess.run(['git', '--no-replace-objects', *args], cwd=ROOT, capture_output=True,
                               check=True, timeout=15).stdout
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError('release_git_checkout_required') from exc

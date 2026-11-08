@@ -102,7 +102,7 @@ def _verified_signing_toolchain(checkout: Path, reviewed_commit: str) -> None:
         raise ReleaseGateDenied('independently_reviewed_commit_required')
     checkout = checkout.resolve(strict=True)
     try:
-        algorithm = subprocess.run(['git', '-C', str(checkout), 'rev-parse', '--show-object-format'],
+        algorithm = subprocess.run(['git', '--no-replace-objects', '-C', str(checkout), 'rev-parse', '--show-object-format'],
                                    check=True, capture_output=True, timeout=15).stdout.decode().strip()
         if algorithm not in ('sha1', 'sha256'):
             raise ReleaseGateDenied('signing_git_object_format_invalid')
@@ -118,7 +118,7 @@ def _verified_signing_toolchain(checkout: Path, reviewed_commit: str) -> None:
             actual = path.read_bytes()
             if len(actual) != info.st_size:
                 raise ReleaseGateDenied('signing_tool_read_race:' + rel)
-            expected = subprocess.run(['git', '-C', str(checkout), 'rev-parse',
+            expected = subprocess.run(['git', '--no-replace-objects', '-C', str(checkout), 'rev-parse',
                                        reviewed_commit + ':' + rel],
                                       check=True, capture_output=True, timeout=15).stdout.decode().strip()
             digest = hashlib.new(algorithm, b'blob ' + str(len(actual)).encode() + b'\0' + actual).hexdigest()
