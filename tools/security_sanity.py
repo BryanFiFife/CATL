@@ -10,6 +10,18 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 FORBIDDEN_IMPORTS={'requests','httpx','urllib.request','pickle','marshal','ctypes'}
 FORBIDDEN_CALLS={'eval','exec','os.system','os.popen','pickle.loads','marshal.loads'}
+# These carefully scoped components are NOT the networkless broker supervisor:
+# - platform_proofs: read-only Windows native token inspection needs ctypes.
+# - witness_protocol: independently configured outbound mTLS witness needs
+#   exactly these urllib.request transport primitives (no generic urlopen).
+ALLOWED_MODULE_IMPORTS = {'platform_proofs.py': {'ctypes'}}
+ALLOWED_FROM_IMPORTS = {
+    'platform_proofs.py': {'ctypes': {'wintypes'}},
+    'witness_protocol.py': {
+        'urllib.request': {'Request', 'build_opener', 'HTTPSHandler',
+                           'HTTPRedirectHandler', 'ProxyHandler'}
+    }
+}
 
 
 def check_runtime() -> list[str]:
@@ -19,10 +31,14 @@ def check_runtime() -> list[str]:
         for node in ast.walk(tree):
             if isinstance(node,ast.Import):
                 for alias in node.names:
-                    if alias.name in FORBIDDEN_IMPORTS:
+                    if (alias.name in FORBIDDEN_IMPORTS and
+                            alias.name not in ALLOWED_MODULE_IMPORTS.get(p.name, set())):
                         findings.append(f'{p.name}:{node.lineno}: import {alias.name}')
             if isinstance(node,ast.ImportFrom) and node.module in FORBIDDEN_IMPORTS:
-                findings.append(f'{p.name}:{node.lineno}: from {node.module}')
+                allowed = ALLOWED_FROM_IMPORTS.get(p.name, {}).get(node.module)
+                imported = {alias.name for alias in node.names}
+                if allowed is None or imported != allowed:
+                    findings.append(f'{p.name}:{node.lineno}: from {node.module}')
             if isinstance(node,ast.Call):
                 fn=node.func
                 name=fn.id if isinstance(fn,ast.Name) else (

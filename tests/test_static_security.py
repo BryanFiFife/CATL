@@ -14,8 +14,8 @@ class TestStaticSecurity(unittest.TestCase):
             for item in ast.walk(node):
                 if isinstance(item, ast.Import):
                     for part in item.names:
-                        if file.name in ("broker.py", "external_backend.py") and part.name == "socket":
-                            continue  # audited AF_UNIX-only local IPC, no TCP/IP endpoints
+                        if file.name in ("broker.py", "external_backend.py", "platform_proofs.py") and part.name == "socket":
+                            continue  # AF_UNIX peer-credential inspection only; no TCP/IP endpoints
                         self.assertNotIn(part.name.split(".")[0],NETWORK_IMPORTS,f"{file.name}:{item.lineno}")
                 if isinstance(item, ast.ImportFrom) and item.module:
                     # urllib.parse.urlsplit is a pure parser; urllib.request,
@@ -23,9 +23,18 @@ class TestStaticSecurity(unittest.TestCase):
                     # remain forbidden. This exception cannot open sockets.
                     if item.module == "urllib.parse" and {n.name for n in item.names} == {"urlsplit"}:
                         continue
+                    # Separate off-host witness transport is an explicitly
+                    # permitted outbound HTTPS client, not the local broker
+                    # or supervisor. Restrict the exception to the exact
+                    # urllib.request symbols used by its pinned TLS client.
+                    if (file.name == "witness_protocol.py" and item.module == "urllib.request"
+                            and {n.name for n in item.names} == {
+                                "Request", "build_opener", "HTTPSHandler", "HTTPRedirectHandler", "ProxyHandler"
+                            }):
+                        continue
                     self.assertNotIn(item.module.split(".")[0],NETWORK_IMPORTS,f"{file.name}:{item.lineno}")
     def test_broker_is_local_unix_only(self):
-        for file in ("broker.py", "external_backend.py"):
+        for file in ("broker.py", "external_backend.py", "platform_proofs.py"):
             source = (ROOT / file).read_text(encoding="utf-8")
             self.assertIn("AF_UNIX", source)
             self.assertNotIn("AF_INET", source)

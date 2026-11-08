@@ -244,6 +244,12 @@ Windows references: [Microsoft AppContainer isolation](https://learn.microsoft.c
 
 CATL is designed to complement rather than replace [AgentInterdict](https://github.com/BryanFiFife/AgentInterdict), [MandateLease](https://github.com/BryanFiFife/MandateLease), [EvidenceClock](https://github.com/BryanFiFife/EvidenceClock) and [Assentia](https://github.com/BryanFiFife/Assentia). The named integrations remain a **roadmap**, not installed adapters.
 
+### 🧪 Complete current-source native Linux regression — 8 November 2026
+
+The full development-branch source was supplied and tested under Linux/Python 3.13 with Xvfb. The initial **479 tests** exposed two stale security assertions; both have been repaired without removing coverage. The original source manifest also held two stale historical-report hashes, which have been corrected after checking the exact GitHub blob identities. Additional security-scanner regression tests and **real subprocess** modern MCP discovery/dispatch tests have been added.
+
+**Native Linux test suite completed: 486 discovered / 484 passed / 2 Windows-only skips / 0 failures**, with Xvfb enabling all five operator overlay GUI tests. The independent pytest run also passed **484 tests + 172 subtests**, with the same two skips. The real **four-UID Linux broker/backend/agent/operator** integration and separate broker E2E both passed, as did **22 Hermes evaluation-verifier tests**. The release package's full file set and SHA-256 index were verified. See [native-source acceptance evidence](docs/NATIVE_SOURCE_ACCEPTANCE_2026-11-08.md). These are native-source acceptance improvements, **not** proof of production host egress containment, Windows/macOS deployments, hardware human presence, real provider settlements, independent remote witness or third-party pentesting. **Six combined roadmap milestones remain open. GitHub Actions remains manual-only.**
+
 ## 🗺️ Roadmap
 
 **Status: private Linux v0.11 release candidate, not production GA.** `[x]` means the scoped implementation and internal tests exist; it does not imply independent security certification. Combined milestones stay unchecked until **all** requirements are met. See [roadmap status and release gates](docs/ROADMAP_STATUS_2026-11-07.md).

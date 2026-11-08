@@ -48,7 +48,12 @@ class TestRootlessSecurity(unittest.TestCase):
             b.notify('tools/call',{})
 
     def test_backend_method_allowlist_exact(self):
-        self.assertEqual(ALLOWED_REQUEST_METHODS,{'initialize','tools/list','tools/call'})
+        # The external socket must support the explicit modern MCP adapter's
+        # server/discover method, alongside the existing legacy operations.
+        # This is an exact allowlist: resource, prompt and arbitrary RPC
+        # methods remain prohibited at the broker/backend boundary.
+        self.assertEqual(ALLOWED_REQUEST_METHODS, {
+            'initialize', 'server/discover', 'tools/list', 'tools/call'})
         self.assertEqual(ALLOWED_NOTIFICATION_METHODS,{'notifications/initialized'})
 
     def test_backend_parent_symlink_denied(self):
