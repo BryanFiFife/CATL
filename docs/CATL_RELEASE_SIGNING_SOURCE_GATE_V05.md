@@ -63,3 +63,9 @@ The direct `tools/release_attest.py sign` path still exists for old private eval
 - Public artifact signing process pinned to an independent build/attestation environment with reviewable retained evidence.
 
 Never treat locally generated receipts, faked test fixtures or developer-authored reports as evidence that an independent assessor has approved production release.
+
+## Protected CLI policy (8 November 2026)
+
+The historical `python tools/release_attest.py sign ...` command now **fails closed** instead of issuing a signature without source-to-Git equivalence. Release operators must use `python tools/release_sealed.py sign ...` with an independently reviewed commit and pinned verification-key fingerprint. The internal `release_attest.sign()` API remains available to the guarded workflow; it is not a separately authorised public release command.
+
+This change does not satisfy Linux deployment confinement, hardware approval, independent witnessing, real provider-effect reconciliation, or external penetration-testing gates.

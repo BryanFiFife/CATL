@@ -287,7 +287,7 @@ def main(argv=None):
     a=p.parse_args(argv)
     try:
         if a.action=='keygen':result=keygen(a.private,a.public)
-        elif a.action=='sign':result=sign(a.zip,a.private,a.output,source_commit=a.source_commit,version=a.version)
+        elif a.action=='sign':raise PermissionError('direct_signing_disabled_use_release_sealed')
         else:result=verify(a.zip,a.attestation,a.public,expected_public_key_fingerprint=a.expected_key_sha256,expected_commit=a.expected_commit,expected_version=a.expected_version)
         print(json.dumps(result,indent=2,sort_keys=True))
         return 0
