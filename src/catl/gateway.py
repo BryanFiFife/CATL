@@ -175,6 +175,8 @@ class SubprocessBackend:
         self.events: queue.Queue[dict[str, Any] | None] = queue.Queue(maxsize=512)
         self.seq = 0
         self._overflow = threading.Event()
+        self._close_lock = threading.Lock()
+        self._closed = False
         self._reader = threading.Thread(target=self._pump, daemon=True)
         self._reader.start()
 
@@ -210,6 +212,11 @@ class SubprocessBackend:
                 # request() checks _overflow independently, so a sentinel
                 # must never block a daemon thread during shutdown.
                 self._overflow.set()
+            finally:
+                # EOF/overflow may follow an early-exiting backend that left
+                # live same-process-group descendants. Kill them without
+                # waiting for the broker's next client request or shutdown.
+                self.close()
 
     def notify(self, method: str, params: dict[str, Any] | None = None) -> None:
         self._send({"jsonrpc": "2.0", "method": method, **({"params": params} if params else {})})
@@ -218,7 +225,8 @@ class SubprocessBackend:
         payload = json.dumps(msg, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
         if len(payload) > MAX_WIRE_BYTES:
             raise ValueError("outbound_message_too_large")
-        if self.proc.poll() is not None:
+        if self._closed or self.proc.poll() is not None:
+            self.close()
             raise RuntimeError("child_exited")
         assert self.proc.stdin is not None
         outcome: list[BaseException] = []
@@ -238,6 +246,7 @@ class SubprocessBackend:
             self.close()
             raise TimeoutError("backend_stdin_write_timeout")
         if outcome:
+            self.close()
             raise RuntimeError("backend_stdin_write_failed") from outcome[0]
 
     def request(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -262,48 +271,64 @@ class SubprocessBackend:
                 self.close()
                 raise RuntimeError("backend_event_queue_overflow")
             if event is None:
+                self.close()
                 raise RuntimeError("backend_closed")
             # A backend request or notification cannot directly reach the agent.
             if event.get("jsonrpc") == "2.0" and event.get("id") == request_id and ("result" in event or "error" in event):
                 return event
 
     def close(self) -> None:
-        # Terminate the process BEFORE closing stdin: another thread may be
-        # blocked in a pipe write and Python's buffered close could hang.
-        if self.proc.poll() is None:
-            # Terminate the ordinary child process group rather than only the
-            # immediate process. Descendants that start a new session, and
-            # Windows descendants, still need external OS containment.
+        # A supervised backend starts in its own POSIX process group. The
+        # backend may exit *before* a same-group descendant does: poll() of
+        # the leader is not evidence that the group has terminated.
+        # Never close stdin before stopping the group; another thread may be
+        # blocked on an untrusted backend's pipe.
+        with self._close_lock:
+            if self._closed:
+                return
+            self._closed = True
             if sys.platform != "win32":
                 import os, signal
+                group = self.proc.pid
                 try:
-                    os.killpg(self.proc.pid, signal.SIGTERM)
+                    os.killpg(group, signal.SIGTERM)
                 except ProcessLookupError:
                     pass
-            else:
-                self.proc.terminate()
-            try:
-                self.proc.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                if sys.platform != "win32":
+                else:
+                    # A grace period when the leader is still active; this is
+                    # deliberately bounded, never an indefinite wait.
                     try:
-                        os.killpg(self.proc.pid, signal.SIGKILL)
+                        self.proc.wait(timeout=0.25)
+                    except subprocess.TimeoutExpired:
+                        pass
+                    # Escalate even if the leader exited successfully: an
+                    # untrusted descendant can otherwise ignore SIGTERM.
+                    try:
+                        os.killpg(group, signal.SIGKILL)
                     except ProcessLookupError:
                         pass
-                else:
+                try:
+                    self.proc.wait(timeout=2)
+                except subprocess.TimeoutExpired:
                     self.proc.kill()
-                self.proc.wait(timeout=2)
-        try:
-            if self.proc.stdin:
-                self.proc.stdin.close()
-        except (OSError, ValueError):
-            pass
-        try:
-            if self.proc.stdout:
-                self.proc.stdout.close()
-        except (OSError, ValueError):
-            pass
-
+                    self.proc.wait(timeout=2)
+            elif self.proc.poll() is None:
+                self.proc.terminate()
+                try:
+                    self.proc.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    self.proc.kill()
+                    self.proc.wait(timeout=2)
+            try:
+                if self.proc.stdin:
+                    self.proc.stdin.close()
+            except (OSError, ValueError):
+                pass
+            try:
+                if self.proc.stdout:
+                    self.proc.stdout.close()
+            except (OSError, ValueError):
+                pass
 
 def error(id_: Any, message: str, code: int = -32003, data: Any = None) -> dict[str, Any]:
     item = {"jsonrpc": "2.0", "id": id_, "error": {"code": code, "message": message}}
