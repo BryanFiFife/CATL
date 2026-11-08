@@ -11,6 +11,7 @@
     "docs/AGENT_ADMISSION_RATE_LIMIT_V011.md": "bc794e7f16940ad684adcc0ae57d0b6c65873c5f480778d3f962da232129c705",
     "docs/ARCHITECTURE.md": "70973f8a32a636d820646a38fe33be18da193245515f639f659048010c3c387c",
     "docs/AUDIT_SNAPSHOT_FIX_2026-11-07.md": "c5b76a801cd79af36226bb1de724bf4f995326406da72b36de0ba7ca1a6237e2",
+    "docs/CATL_ACCEPTANCE_RC_2026-11-08.md": "0517b26c78254c16848da605ef8e4e7218db2e8ad44e49d389a8cbcaf53dee71",
     "docs/CATL_RELEASE_CONTAINER_AND_PROVENANCE_V04.md": "693ed1ae543d5c7ccfd3e436ff517cb1980fd0fe87220d5e8698dfc8825e6310",
     "docs/CATL_RELEASE_PORTABILITY_V03.md": "8b3b24c6287e98080c5863187d31a4a7553da8644dac67afca330e1349d1b5be",
     "docs/CATL_RELEASE_SIGNING_SOURCE_GATE_V05.md": "0ff8f036be97b053aac51a1338226720a07187db7651ac817703d8e3443bfeed",
@@ -211,6 +212,6 @@
   "name": "caledapt-agent-trust",
   "release_type": "private-linux-hardening-release-candidate",
   "signed": false,
-  "source_commit": "d69e74dfdf1e3e152294f62ac51267fb5531112b",
+  "source_commit": "22b8e9b27f0918ab3f599eecda99c87bf0dcba5d",
   "version": "0.11.0rc1"
 }
