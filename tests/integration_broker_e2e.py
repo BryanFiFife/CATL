@@ -17,7 +17,16 @@ with tempfile.TemporaryDirectory(prefix='catl-v04-e2e-') as d:
   state=p/'state'; anchor_dir=p/'anchors';anchor_dir.mkdir(mode=0o700)
   socket_dir=p/'sockets';socket_dir.mkdir(mode=0o755)
   agent_sock=socket_dir/'agent.sock';op_sock=socket_dir/'operator.sock';anchor=anchor_dir/'audit.json'
-  policy=ROOT/'examples/policy.json'; backend=ROOT/'examples/mock_server.py'
+  # The broker identity must trust the policy directory. A developer checkout
+  # may be owned by an unprivileged user, so stage a root-owned copy for this
+  # root-capable harness instead of mutating the checkout.
+  _policy_dir = Path(tempfile.mkdtemp(prefix='catl-e2e-policy-'))
+  policy = _policy_dir/'policy.json'
+  policy.write_bytes((ROOT/'examples/policy.json').read_bytes())
+  os.chmod(_policy_dir, 0o755)
+  os.chmod(policy, 0o644)
+  _policy_dir.chmod(0o755)
+  backend=ROOT/'examples/mock_server.py'
   demo=p/'demo'; demo.mkdir(mode=0o777); demo.chmod(0o777)
   ENV['CATL_DEMO_OUTPUT']=str(demo/'output.txt')
   # cold start database disarmed, missing anchor before admin bootstrap

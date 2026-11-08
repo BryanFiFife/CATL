@@ -21,7 +21,7 @@ else:
 
 def live(pid):
     try:return Path(f'/proc/{pid}/stat').read_text().split()[2]!='Z'
-    except FileNotFoundError:return False
+    except (FileNotFoundError, ProcessLookupError):return False
 
 
 def mkobj(proc):

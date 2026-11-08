@@ -200,6 +200,21 @@ class FileDigestVerifier:
             _check_writers(current)
             if pinned(before) != pinned(after) or pinned(after) != pinned(current) or seen != after.st_size:
                 raise ValueError("postcondition_file_changed_during_read")
+            # mtime/ctime have finite resolution: a same-size mutation that
+            # lands inside one kernel timestamp tick is invisible to the
+            # pinned() comparison above. Re-read the pinned descriptor and
+            # fail closed if the digest differs from the first pass.
+            os.lseek(fd, 0, os.SEEK_SET)
+            replay = hashlib.sha256()
+            replayed = 0
+            while True:
+                part = os.read(fd, 65536)
+                if not part:
+                    break
+                replayed += len(part)
+                replay.update(part)
+            if replay.digest() != sha.digest() or replayed != seen:
+                raise ValueError("postcondition_file_changed_during_read")
         finally:
             if fd is not None:
                 os.close(fd)

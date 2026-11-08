@@ -17,6 +17,8 @@ spec.loader.exec_module(verifier)
 
 class WriteBoundaryTests(unittest.TestCase):
     def setUp(self):
+        import fixture_modes as fm
+        fm.umask_022(self)
         t=tempfile.TemporaryDirectory()
         self.addCleanup(t.cleanup)
         self.base=Path(t.name)
@@ -74,6 +76,8 @@ if __name__=='__main__':unittest.main()
 
 class PermissionRaceTests(unittest.TestCase):
     def setUp(self):
+        import fixture_modes as fm
+        fm.umask_022(self)
         t=tempfile.TemporaryDirectory()
         self.addCleanup(t.cleanup)
         self.base=Path(t.name)

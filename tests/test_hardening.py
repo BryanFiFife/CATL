@@ -66,6 +66,8 @@ class Backend:
 
 class ModernTests(unittest.TestCase):
     def setUp(self):
+        import fixture_modes as fm
+        fm.umask_022(self)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.backend = Backend()
@@ -202,6 +204,8 @@ class IsolationTests(unittest.TestCase):
 
 class PostconditionTests(unittest.TestCase):
     def setUp(self):
+        import fixture_modes as fm
+        fm.umask_022(self)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)

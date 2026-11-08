@@ -134,6 +134,10 @@ class AuthorityFiles(unittest.TestCase):
     def test_policy_owner_and_parent_checked(self):
         import os
         from unittest.mock import patch
+        # fixtures must be 0644: the product deliberately rejects group-writable
+        # policy files, and user-private-group umasks (002) would create one
+        old_umask = os.umask(0o022)
+        self.addCleanup(os.umask, old_umask)
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             file = root / 'policy.json'

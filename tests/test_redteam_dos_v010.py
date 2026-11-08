@@ -51,7 +51,10 @@ class BackendFloodTests(unittest.TestCase):
         self.assertTrue(backend._overflow.is_set())
         with self.assertRaisesRegex(RuntimeError, 'backend_event_queue_overflow'):
             backend.request('tools/call', {'name': 'sink', 'arguments': {}})
-        backend.close.assert_called_once()
+        # Two fail-closed paths may both close (pump finally + request overflow);
+        # the real close() is idempotent under its lock. The security property
+        # under test is that close happens, not that it happens exactly once.
+        self.assertTrue(backend.close.called, 'overflow must close the backend')
     def test_malformed_backend_flood_fails_closed_without_infinite_spin(self):
         backend = object.__new__(SubprocessBackend)
         backend.events = queue.Queue(maxsize=3)

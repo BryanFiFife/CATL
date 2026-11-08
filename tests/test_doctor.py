@@ -17,6 +17,8 @@ class DoctorTests(unittest.TestCase):
     def setUp(self):
         temp=tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
+        import fixture_modes as fm
+        fm.umask_022(self)
         self.root=Path(temp.name)
         self.state_dir=self.root/'state'
         self.anchor_dir=self.root/'anchor'

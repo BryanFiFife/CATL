@@ -10,6 +10,10 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 
 class TestModernStdio(unittest.TestCase):
+    def setUp(self):
+        import fixture_modes as fm
+        fm.umask_022(self)
+        fm.trust_repo_fixture(ROOT / 'examples' / 'policy.json')
     def test_discover_list_tool_call_and_refusal(self):
         with tempfile.TemporaryDirectory() as td:
             home=Path(td)/'private'
@@ -50,6 +54,10 @@ class TestModernStdio(unittest.TestCase):
             self.assertIn(b'isolation_required',run.stderr)
 
 class TestRealPostcondition(unittest.TestCase):
+    def setUp(self):
+        import fixture_modes as fm
+        fm.umask_022(self)
+        fm.trust_repo_fixture(ROOT / 'examples' / 'policy.json')
     def test_real_child_file_digest_and_approval(self):
         from hashlib import sha256
         sys.path.insert(0, str(ROOT/'src'))

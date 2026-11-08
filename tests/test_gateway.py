@@ -180,6 +180,14 @@ class TestGateway(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def setUp(self):
+        import fixture_modes as fm
+        fm.umask_022(self)
+        fm.trust_repo_fixture(ROOT / "examples" / "policy.json")
+    def setUp(self):
+        import fixture_modes as fm
+        fm.umask_022(self)
+        fm.trust_repo_fixture(ROOT / "examples" / "policy.json")
     def test_subprocess_real_stdio_and_approval_persistence(self):
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp) / "state"

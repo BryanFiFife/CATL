@@ -52,6 +52,12 @@ class ModernBackendSubprocessE2E(unittest.TestCase):
         td=tempfile.TemporaryDirectory()
         self.addCleanup(td.cleanup)
         self.root=Path(td.name)
+        import fixture_modes as fm
+        fm.umask_022(self)
+        fm.trust_repo_fixture(ROOT / 'examples' / 'policy.json')
+        import fixture_modes as fm
+        fm.umask_022(self)
+        fm.trust_repo_fixture(ROOT / 'examples' / 'policy.json')
         self.policy=Policy.from_file(ROOT/'examples'/'policy.json')
         self.state=State(self.root/'audit.sqlite3',b'R'*32)
         self.state.set_feature('gateway_enabled',True,'test-modern-process')

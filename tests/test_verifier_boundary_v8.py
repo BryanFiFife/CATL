@@ -17,6 +17,8 @@ spec.loader.exec_module(mod)
 
 class VerifierBoundaryV8(unittest.TestCase):
     def setUp(self):
+        import fixture_modes as fm
+        fm.umask_022(self)
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.base = Path(tmp.name)
