@@ -56,10 +56,12 @@ def modernize(response: dict[str, Any]) -> dict[str, Any]:
             return {"jsonrpc": "2.0", "id": response["id"],
                     "error": {"code": -32603, "message": "invalid_backend_result_metadata"}}
         result["resultType"] = "complete"
-        if "tools" in result and isinstance(result["tools"], list):
-            # Tool visibility changes via operator controls; never cache.
-            result["ttlMs"] = 0
-            result["cacheScope"] = "private"
+        # MCP 2026-07-28 requires cache metadata on EVERY successful Result,
+        # including tools/call (not merely tools/list and discovery).
+        # Never forward upstream cache hints: approvals, policy and operator
+        # controls can change between calls, and tool results are private.
+        result["ttlMs"] = 0
+        result["cacheScope"] = "private"
         result["_meta"] = {**previous_meta, SERVER_INFO_KEY: SERVER_INFO}
         response = {**response, "result": result}
     return response
