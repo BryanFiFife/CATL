@@ -149,6 +149,7 @@ def make_handler(log: DurableWitnessLog, *, client_cert_sha256: str):
             if (self.headers.get_all('Transfer-Encoding') or
                     self.headers.get_all('Content-Length') is None or
                     len(self.headers.get_all('Content-Length')) != 1 or
+                    len(self.headers.get_all('Content-Type') or ()) > 1 or
                     len(str(self.headers)) > MAX_WITNESS_REQUEST_HEADERS):
                 self.send_error(400); return
             peer = self.request.getpeercert(binary_form=True)
@@ -162,6 +163,8 @@ def make_handler(log: DurableWitnessLog, *, client_cert_sha256: str):
                 self.send_error(415);return
             try:
                 data=self.rfile.read(int(length))
+                if len(data) != int(length):
+                    self.send_error(400); return
                 head=json.loads(data,object_pairs_hook=_unique_pairs)
                 reply=log.receive(head)
                 body=json.dumps(reply,sort_keys=True,separators=(',',':')).encode()

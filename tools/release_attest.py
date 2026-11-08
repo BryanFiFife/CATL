@@ -19,11 +19,12 @@ import zipfile
 
 DOMAIN=b'CATL/RELEASE-ATTEST/v1\0'
 MAX_ATTEST_BYTES=16*1024
+MAX_INTERNAL_MANIFEST_BYTES=2*1024*1024
 MAX_MEMBERS=2000
 MAX_MEMBER_BYTES=64*1024*1024
 MAX_TOTAL_BYTES=512*1024*1024
 MAX_RATIO=500
-COMMIT_RE=re.compile(r'^[0-9a-f]{40}$')
+COMMIT_RE=re.compile(r'^(?:[0-9a-f]{40}|[0-9a-f]{64})$')
 VERSION_RE=re.compile(r'^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$')
 
 
@@ -40,8 +41,8 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def _read_unique_json(data: bytes) -> dict:
-    if len(data)>MAX_ATTEST_BYTES:
+def _read_unique_json(data: bytes, *, max_bytes: int = MAX_ATTEST_BYTES) -> dict:
+    if len(data)>max_bytes:
         raise ValueError('attestation_oversized')
     def unique(pairs):
         out={}
@@ -52,6 +53,18 @@ def _read_unique_json(data: bytes) -> dict:
     value=json.loads(data.decode('utf-8'),object_pairs_hook=unique)
     if not isinstance(value,dict):raise ValueError('attestation_must_be_object')
     return value
+
+
+def _bounded_member(z: zipfile.ZipFile, name: str, maximum: int) -> bytes:
+    """Read only a bounded amount even if central-directory metadata lies."""
+    info=z.getinfo(name)
+    if info.file_size>maximum:
+        raise ValueError('internal_release_metadata_oversized:' + name)
+    with z.open(info) as source:
+        data=source.read(maximum+1)
+    if len(data)>maximum:
+        raise ValueError('internal_release_metadata_oversized:' + name)
+    return data
 
 
 def validate_release_zip(path: Path) -> dict:
@@ -80,18 +93,34 @@ def validate_release_zip(path: Path) -> dict:
                     if not part:break
                     digest.update(part)
             digests[name]=digest.hexdigest()
+        source_commit=None
         if 'RELEASE_MANIFEST.json' in names and 'SHA256SUMS.txt' in names:
             manifest_name='RELEASE_MANIFEST.json'
-            manifest=_read_unique_json(z.read(manifest_name))
+            manifest=_read_unique_json(_bounded_member(z,manifest_name,MAX_INTERNAL_MANIFEST_BYTES),
+                                       max_bytes=MAX_INTERNAL_MANIFEST_BYTES)
+            source_commit=manifest.get('source_commit')
+            if source_commit is not None and (not isinstance(source_commit,str) or not COMMIT_RE.fullmatch(source_commit)):
+                raise ValueError('invalid_embedded_source_commit')
             expected=manifest.get('files')
             if not isinstance(expected,dict) or manifest.get('algorithm')!='sha256':
                 raise ValueError('invalid_internal_release_manifest')
             tracked=names-{'RELEASE_MANIFEST.json','SHA256SUMS.txt'}
+            # The standalone release builder rejects secret/key file names;
+            # the signer must enforce the same boundary even for a ZIP with
+            # recomputed, internally consistent checksums.
+            sensitive_parts={'.env','.envrc','.npmrc','.pypirc','id_rsa','id_ed25519',
+                             'credentials.json','secrets.toml'}
+            sensitive_suffixes=('.pem','.key','.p8','.p12','.pfx','.sqlite','.sqlite3','.db','.kdbx')
+            for member in tracked:
+                parts=member.lower().split('/')
+                if (any(part in sensitive_parts or part.startswith('.env.') for part in parts)
+                        or member.lower().endswith(sensitive_suffixes)):
+                    raise ValueError('release_contains_sensitive_member:' + member)
             if set(expected)!=tracked or any(not isinstance(h,str) or not re.fullmatch(r'[0-9a-f]{64}',h)
                                               or h!=digests[p] for p,h in expected.items()):
                 raise ValueError('internal_manifest_hash_or_set_mismatch')
             sums={}
-            for line in z.read('SHA256SUMS.txt').decode('utf-8').splitlines():
+            for line in _bounded_member(z,'SHA256SUMS.txt',MAX_INTERNAL_MANIFEST_BYTES).decode('utf-8').splitlines():
                 matched=re.fullmatch(r'([0-9a-f]{64})  ([^\r\n]+)',line)
                 if not matched or matched[2] in sums:raise ValueError('invalid_internal_sha256sums')
                 sums[matched[2]]=matched[1]
@@ -105,7 +134,7 @@ def validate_release_zip(path: Path) -> dict:
             manifest_name=matches[0]
             prefix=manifest_name[:-len('MANIFEST_SHA256.txt')]
             expected={}
-            for line in z.read(manifest_name).decode('utf-8').splitlines():
+            for line in _bounded_member(z,manifest_name,MAX_INTERNAL_MANIFEST_BYTES).decode('utf-8').splitlines():
                 matched=re.fullmatch(r'([0-9a-f]{64})  ([^\r\n]+)',line)
                 if not matched:raise ValueError('invalid_internal_bundle_manifest')
                 rel=matched[2]
@@ -124,7 +153,8 @@ def validate_release_zip(path: Path) -> dict:
         if not isinstance(version,str) or not VERSION_RE.fullmatch(version):
             raise ValueError('archive_version_invalid')
         return {'verified_members':len(names),'verified_source_members':len(tracked),
-                'version':version,'manifest_sha256':digests[manifest_name]}
+                'version':version,'manifest_sha256':digests[manifest_name],
+                'source_commit':source_commit}
 
 
 
@@ -197,6 +227,8 @@ def _payload(zip_path: Path, source_commit: str, version: str) -> dict:
         raise ValueError('invalid_source_commit_or_version')
     state=validate_release_zip(zip_path)
     if state['version']!=version:raise ValueError('version_does_not_match_embedded_release_manifest')
+    if state['source_commit'] is not None and state['source_commit']!=source_commit:
+        raise ValueError('claimed_commit_mismatches_embedded_source_commit')
     return {'schema':'CATL/RELEASE-ATTEST/v1','source_commit':source_commit,
             'version':version,'zip_sha256':sha256_file(zip_path),
             'internal_manifest_sha256':state['manifest_sha256'], 'files_verified':state['verified_members']}
