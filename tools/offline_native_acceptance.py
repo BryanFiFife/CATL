@@ -23,16 +23,34 @@ MAX_FILES = 10000
 MAX_NATIVE_LOG_BYTES = 32 * 1024 * 1024
 
 
+def _git_process(repo: Path, *args: str) -> bytes:
+    """Never inherit Git hooks/fsmonitor, executable diff drivers or user PATH.
+
+    Keep this dependency-free: the native runner itself must validate sources
+    *before* importing or executing any untrusted checkout Python module.
+    """
+    env = {
+        'PATH': os.defpath, 'LC_ALL': 'C',
+        'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_GLOBAL': os.devnull,
+        'GIT_CONFIG_SYSTEM': os.devnull, 'GIT_OPTIONAL_LOCKS': '0',
+    }
+    if os.name == 'nt':
+        env['SystemRoot'] = os.environ.get('SystemRoot', '')
+        env['WINDIR'] = os.environ.get('WINDIR', '')
+    argv = ['git', '--no-replace-objects',
+            '-c', 'core.fsmonitor=false', '-c', 'diff.external=',
+            '-c', 'core.hooksPath=' + os.devnull, *args]
+    return subprocess.run(argv, cwd=repo, env=env, check=True,
+                          capture_output=True, timeout=15).stdout
+
+
 def _git(repo: Path, *args: str) -> str:
-    process = subprocess.run(["git", "--no-replace-objects", *args], cwd=repo, check=True,
-                             capture_output=True, timeout=15)
-    return process.stdout.decode("utf-8", "strict").strip()
+    return _git_process(repo, *args).decode('utf-8', 'strict').strip()
 
 
 def _git_files(repo: Path) -> set[str]:
-    proc = subprocess.run(["git", "--no-replace-objects", "ls-files", "-z"], cwd=repo, check=True,
-                          capture_output=True, timeout=15)
-    return {part.decode("utf-8", "strict") for part in proc.stdout.split(b"\0") if part}
+    raw = _git_process(repo, 'ls-files', '-z')
+    return {part.decode('utf-8', 'strict') for part in raw.split(b'\0') if part}
 
 
 def _safe_source_path(repo: Path, name: str) -> Path:
@@ -79,8 +97,7 @@ def verify_exact_git_source(repo: Path, commit: str) -> dict:
         raise ValueError('native_source_git_object_format_invalid')
     if _git(repo, 'rev-parse', 'HEAD') != commit:
         raise ValueError('native_source_head_changed')
-    tree = subprocess.run(['git', '--no-replace-objects', 'ls-tree', '-r', '-z', '--full-tree', commit],
-                          cwd=repo, capture_output=True, check=True, timeout=15).stdout
+    tree = _git_process(repo, 'ls-tree', '-r', '-z', '--full-tree', commit)
     expected: dict[str, tuple[str, bytes]] = {}
     for entry in tree.split(b'\0'):
         if not entry:
@@ -386,9 +403,15 @@ def run(repo: Path, out: Path, *, timeout: int=900, expected_commit: str | None=
         status["commit"]=_git(repo,"rev-parse","HEAD")
         if expected_commit is not None and status["commit"] != expected_commit:
             raise ValueError("unexpected_checkout_commit")
-        if _git(repo,"status","--porcelain","--untracked-files=no"):
-            raise ValueError("tracked_source_dirty")
-        status.update(verify_exact_git_source(repo, status['commit']))
+        # Git status/diff may execute repository-defined .gitattributes clean
+        # filters. Inspect file bytes/modes directly against immutable HEAD,
+        # not via Git's worktree diff machinery.
+        try:
+            status.update(verify_exact_git_source(repo, status['commit']))
+        except ValueError as exc:
+            if str(exc).startswith('native_source_not_equal_committed_blob:'):
+                raise ValueError('tracked_source_dirty (' + str(exc) + ')') from exc
+            raise
         status.update(verify_files(repo))
         # Do not inherit credentials or cloud identifiers from the operator shell.
         allowed=("PATH","LANG","LC_ALL","SYSTEMROOT","WINDIR","HOME","TMP","TEMP","TMPDIR")

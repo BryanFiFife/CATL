@@ -19,6 +19,7 @@ import sys
 import zipfile
 
 from verify_source_artifact import verify_source_artifact
+from release_pack import _run_trusted_git
 
 PIN_RE = re.compile(r'^[0-9a-f]{64}$')
 COMMIT_RE = re.compile(r'^(?:[0-9a-f]{40}|[0-9a-f]{64})$')
@@ -102,8 +103,8 @@ def _verified_signing_toolchain(checkout: Path, reviewed_commit: str) -> None:
         raise ReleaseGateDenied('independently_reviewed_commit_required')
     checkout = checkout.resolve(strict=True)
     try:
-        algorithm = subprocess.run(['git', '--no-replace-objects', '-C', str(checkout), 'rev-parse', '--show-object-format'],
-                                   check=True, capture_output=True, timeout=15).stdout.decode().strip()
+        algorithm = _run_trusted_git(('rev-parse', '--show-object-format'),
+                                     cwd=checkout).stdout.decode().strip()
         if algorithm not in ('sha1', 'sha256'):
             raise ReleaseGateDenied('signing_git_object_format_invalid')
         for rel in ('tools/release_pack.py', 'tools/verify_source_artifact.py',
@@ -118,9 +119,8 @@ def _verified_signing_toolchain(checkout: Path, reviewed_commit: str) -> None:
             actual = path.read_bytes()
             if len(actual) != info.st_size:
                 raise ReleaseGateDenied('signing_tool_read_race:' + rel)
-            expected = subprocess.run(['git', '--no-replace-objects', '-C', str(checkout), 'rev-parse',
-                                       reviewed_commit + ':' + rel],
-                                      check=True, capture_output=True, timeout=15).stdout.decode().strip()
+            expected = _run_trusted_git(('rev-parse', reviewed_commit + ':' + rel),
+                                        cwd=checkout).stdout.decode().strip()
             digest = hashlib.new(algorithm, b'blob ' + str(len(actual)).encode() + b'\0' + actual).hexdigest()
             if expected != digest:
                 raise ReleaseGateDenied('signing_tool_source_modified:' + rel)

@@ -83,10 +83,39 @@ def _sensitive_name(name: str) -> bool:
             or name.lower().endswith(SENSITIVE_SUFFIXES))
 
 
+def _run_trusted_git(args: tuple[str, ...] | list[str], *, cwd: Path,
+                     timeout: int = 15) -> subprocess.CompletedProcess:
+    """Use Git as a read-only data parser, never as a command execution host.
+
+    Git's fsmonitor, custom diff drivers, inherited GIT_CONFIG_COUNT, PATH,
+    GIT_DIR and global settings can execute attacker-specified programs or
+    redirect a supposedly pinned checkout. Ignore operator Git configuration
+    and force the Git executable to resolve from the OS system search path.
+    Local Git config is still read for repository layout/object format, but
+    potentially executable options are overridden for every command.
+    """
+    env = {
+        'PATH': os.defpath, 'LC_ALL': 'C',
+        'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_GLOBAL': os.devnull,
+        'GIT_CONFIG_SYSTEM': os.devnull, 'GIT_OPTIONAL_LOCKS': '0',
+    }
+    if os.name == 'nt':
+        env['SystemRoot'] = os.environ.get('SystemRoot', '')
+        env['WINDIR'] = os.environ.get('WINDIR', '')
+    argv = [
+        'git', '--no-replace-objects',
+        '-c', 'core.fsmonitor=false',
+        '-c', 'diff.external=',
+        '-c', 'core.hooksPath=' + os.devnull,
+        *args,
+    ]
+    return subprocess.run(argv, cwd=cwd, env=env, capture_output=True,
+                          check=True, timeout=timeout)
+
+
 def _git(*args: str) -> bytes:
     try:
-        return subprocess.run(['git', '--no-replace-objects', *args], cwd=ROOT, capture_output=True,
-                              check=True, timeout=15).stdout
+        return _run_trusted_git(args, cwd=ROOT).stdout
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError('release_git_checkout_required') from exc
 
@@ -95,14 +124,12 @@ def _tracked_files(*, expected_commit: str | None = None) -> tuple[list[tuple[st
     top = Path(os.fsdecode(_git('rev-parse', '--show-toplevel')).strip()).resolve()
     if top != ROOT.resolve():
         raise ValueError('release_git_root_mismatch')
-    # Generated metadata is excluded from this cleanliness check because this
-    # command regenerates it. ALL other tracked changes must be committed.
-    dirty = _git('diff', '--name-only', '-z', 'HEAD', '--')
-    for raw in dirty.split(b'\0'):
-        if not raw:
-            continue
-        if os.fsdecode(raw) not in SKIP_NAMES:
-            raise ValueError('release_tracked_source_dirty')
+    # Deliberately DO NOT run `git diff` or `git status`: a repository-local
+    # `.gitattributes` filter driver can execute arbitrary clean-process code
+    # even with fsmonitor disabled and --no-ext-diff/--no-textconv. The trusted
+    # Git tree and direct worktree byte-vs-object checks in release_files()
+    # detect every packaged tracked-file change without executing Git filters.
+    # RELEASE_MANIFEST.json and SHA256SUMS.txt are regenerated from those bytes.
     # HEAD's immutable Git tree is authoritative. `git diff` and `git ls-files`
     # can hide modified working files marked skip-worktree/assume-unchanged.
     algorithm = _git('rev-parse', '--show-object-format').decode('ascii').strip()
@@ -174,7 +201,7 @@ def release_files(*, expected_commit: str | None = None):
         git_object = b'blob ' + str(len(data)).encode('ascii') + b'\0' + data
         actual_oid = hashlib.new(algorithm, git_object).hexdigest()
         if actual_oid != committed_object_id:
-            raise ValueError('release_tracked_blob_mismatch:' + name)
+            raise ValueError('release_tracked_source_dirty (release_tracked_blob_mismatch:' + name + ')')
         total += len(data)
         if total > MAX_TOTAL_BYTES:
             raise ValueError('release_source_total_oversized')

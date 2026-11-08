@@ -20,7 +20,8 @@ import zipfile
 from pathlib import Path
 
 from release_pack import (_excluded_source_path, _portable_names, _safe_name,
-                          _sensitive_name, verify as verify_release_zip)
+                          _sensitive_name, _run_trusted_git,
+                          verify as verify_release_zip)
 
 MAX_GIT_FILE = 16 * 1024 * 1024
 MAX_FILES = 4096
@@ -28,8 +29,7 @@ MAX_FILES = 4096
 
 def _git(root: Path, *args: str) -> bytes:
     try:
-        return subprocess.run(['git', '--no-replace-objects', '-C', str(root), *args],
-                              check=True, capture_output=True, timeout=30).stdout
+        return _run_trusted_git(args, cwd=root, timeout=30).stdout
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError('source_git_checkout_or_object_unavailable') from exc
 
