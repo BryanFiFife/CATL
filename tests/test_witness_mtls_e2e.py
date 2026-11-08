@@ -126,7 +126,7 @@ class LiveMTLSWitnessTests(unittest.TestCase):
         self.start_server()
         self.addCleanup(self.stop_server)
 
-    def start_server(self):
+    def start_server(self, allowed_ips=None):
         with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
             s.bind(('127.0.0.1',0))
             self.port=s.getsockname()[1]
@@ -135,6 +135,8 @@ class LiveMTLSWitnessTests(unittest.TestCase):
              '--tls-cert',str(self.tls_cert),'--tls-key',str(self.tls_key),
              '--client-ca',str(self.ca_file),'--client-cert-sha256',self.client_cert_sha256,
              '--listen','127.0.0.1','--port',str(self.port)]
+        for allowed in (allowed_ips or ('127.0.0.1',)):
+            cmd.extend(['--allow-client-ip',allowed])
         self.server=subprocess.Popen(cmd,stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,stderr=subprocess.PIPE,user=self.server_uid,
             group=self.server_gid,extra_groups=[],cwd=str(self.server_dir),
@@ -189,6 +191,14 @@ class LiveMTLSWitnessTests(unittest.TestCase):
         with self.assertRaises(HTTPError) as error:
             candidate({'ledger_id':'unauthorised-client','sequence':0,'head_mac':'GENESIS'})
         self.assertEqual(error.exception.code,403)
+
+    def test_unlisted_peer_ip_refused_before_tls_handshake(self):
+        # Whitelist a different loopback source; 127.0.0.1 must be dropped by
+        # the server before allocating any TLS worker or reading cert bytes.
+        self.stop_server()
+        self.start_server(allowed_ips=('127.0.0.2',))
+        with self.assertRaises((ssl.SSLError, ConnectionError, OSError, WitnessRejected)):
+            self.client.witness({'ledger_id':'source-rejected','sequence':0,'head_mac':'GENESIS'})
 
     def test_tls_requires_client_certificate(self):
         no_client=ssl.create_default_context(cafile=str(self.ca_file))

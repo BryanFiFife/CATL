@@ -8,6 +8,7 @@ share a privileged account or filesystem with the CATL broker.
 from __future__ import annotations
 import argparse
 import hashlib
+import ipaddress
 import hmac
 import re
 import json
@@ -31,6 +32,29 @@ WITNESS_CLIENT_TIMEOUT = 10.0
 MAX_WITNESS_REQUEST_HEADERS = 4096
 
 
+def validated_client_ips(values: list[str] | tuple[str, ...]) -> frozenset[ipaddress.IPv4Address | ipaddress.IPv6Address]:
+    """Explicitly pinned source addresses; not a replacement for a firewall.
+
+    Reject unspecified/multicast/broadcast and CIDR ranges. A certificate
+    remains mandatory even when the peer's IP is pinned.
+    """
+    if not values or len(values) > 32:
+        raise ValueError('witness_client_ip_allowlist_required')
+    output = set()
+    for value in values:
+        if not isinstance(value, str) or not value or '/' in value:
+            raise ValueError('witness_client_ip_invalid')
+        try:
+            addr = ipaddress.ip_address(value)
+        except ValueError as exc:
+            raise ValueError('witness_client_ip_invalid') from exc
+        if (addr.is_unspecified or addr.is_multicast or
+                (isinstance(addr, ipaddress.IPv4Address) and addr.is_reserved)):
+            raise ValueError('witness_client_ip_not_usable')
+        output.add(addr)
+    return frozenset(output)
+
+
 class BoundedMTLSServer(ThreadingHTTPServer):
     """Bound TLS setup and active handlers, fail closed on untrusted peers.
 
@@ -43,12 +67,26 @@ class BoundedMTLSServer(ThreadingHTTPServer):
     block_on_close = False
     allow_reuse_address = False
 
-    def __init__(self, address, handler, *, context: ssl.SSLContext):
+    def __init__(self, address, handler, *, context: ssl.SSLContext, allowed_client_ips: frozenset):
+        if not allowed_client_ips:
+            raise ValueError('witness_client_ip_allowlist_required')
+        self.allowed_client_ips = frozenset(allowed_client_ips)
         self._tls_context = context
         self._workers = threading.BoundedSemaphore(MAX_WITNESS_CONNECTIONS)
         super().__init__(address, handler)
 
     def process_request(self, request, client_address):
+        # Reject unauthorised sources before consuming a TLS handshake worker.
+        # The kernel's peer address is not proof of broker identity: mTLS and
+        # the exact client certificate pin remain mandatory.
+        try:
+            peer_ip = ipaddress.ip_address(client_address[0])
+        except (ValueError, IndexError, TypeError):
+            request.close()
+            return
+        if peer_ip not in self.allowed_client_ips:
+            request.close()
+            return
         if not self._workers.acquire(blocking=False):
             request.close()
             return
@@ -147,6 +185,8 @@ def main():
     parser.add_argument('--client-ca',type=Path,required=True)
     parser.add_argument('--client-cert-sha256',required=True,
                         help='Pinned SHA-256 of exact DER client certificate (lowercase hex)')
+    parser.add_argument('--allow-client-ip', action='append', required=True,
+                        help='Exact expected broker source IP (repeatable; no CIDR)')
     parser.add_argument('--listen','-l',default='127.0.0.1')
     parser.add_argument('--port',type=int,default=9443)
     a=parser.parse_args()
@@ -158,9 +198,10 @@ def main():
     ctx.verify_mode=ssl.CERT_REQUIRED
     ctx.load_verify_locations(cafile=str(a.client_ca))
     ctx.load_cert_chain(certfile=str(a.tls_cert),keyfile=str(a.tls_key))
+    allowed_ips = validated_client_ips(a.allow_client_ip)
     server=BoundedMTLSServer((a.listen,a.port),
                             make_handler(log, client_cert_sha256=a.client_cert_sha256),
-                            context=ctx)
+                            context=ctx, allowed_client_ips=allowed_ips)
     server.serve_forever(poll_interval=.3)
 
 if __name__=='__main__':main()

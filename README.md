@@ -295,6 +295,14 @@ CATL's native JSON decoder now rejects exponent overflow (`1e999`) and nonzero d
 
 [`tools/offline_native_acceptance.py`](tools/offline_native_acceptance.py) verifies the tracked Git source file list, SHA-256 manifest and checksum index **before running the full `test_*.py` unit suite offline**. It refuses a dirty or mismatched checkout, bounds hangs, and writes `acceptance.json` plus `native-unittest.log` outside the source tree. **12 isolated runner regression tests passed.** The full private CATL suite was **not** executed in this development environment. [Read the offline acceptance instructions](docs/OFFLINE_NATIVE_ACCEPTANCE.md).
 
+### ✅ Witness pre-TLS source-IP admission implemented — 8 November 2026
+
+The witness now **requires explicitly pinned source IPs** (`--allow-client-ip`) and rejects unlisted peers before allocating TLS workers. This supplements, but never replaces, TLS 1.3 mutual authentication and the exact client-certificate fingerprint. [Implementation and live adversarial evidence](docs/WITNESS_SOURCE_IP_ADMISSION_2026-11-08.md).
+
+**Verified locally:** 115/115 tests in both unittest and pytest, plus 17 pytest subtests; 24 disallowed-source connection attempts did not block an authorised signed receipt. **Remaining observed risk:** 16 stalled connections from an *allowed* source still exhausted all workers until handshake timeout. The historical CATL v0.5 native baseline passed 179/179, but the **current full native CATL checkout has NOT been tested** in this runtime. Windows, macOS, hardware FIDO2, real external providers, live Hermes and independent penetration testing are not certified. See the [release acceptance matrix](docs/RELEASE_ACCEPTANCE_STATUS_2026-11-08.md).
+
+**Release decision: NOT RELEASE-READY.** The six combined milestones below remain unchecked until full acceptance.
+
 ### 🔧 Six outstanding roadmap workstreams — development implementation
 
 A [separate six-workstream implementation report](docs/SIX_GATE_IMPLEMENTATION_2026-11-07.md) covers new WebAuthn assertion verification, Linux/Windows/macOS isolation proofs, explicit **modern MCP upstream tools-only mode** (`catl broker --backend-era modern`), crash-conservative provider idempotency/readback, independently signed witness receipts, an mTLS witness-service scaffold and offline SBOM validation.
