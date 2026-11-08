@@ -211,6 +211,6 @@
   "name": "caledapt-agent-trust",
   "release_type": "private-linux-hardening-release-candidate",
   "signed": false,
-  "source_commit": "9149b5f794a910a741161eb544923ad78600aacc",
+  "source_commit": "d69e74dfdf1e3e152294f62ac51267fb5531112b",
   "version": "0.11.0rc1"
 }
