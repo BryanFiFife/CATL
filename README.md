@@ -1,229 +1,319 @@
 <div align="center">
 
-# 🛡️ CATL — AI Agent Security Gateway for MCP Tools
+# 🛡️ CATL — Open-Source AI Agent Security Gateway for MCP Tools
 
-**Caledapt Agent Trust Layer** · *Give AI agents tools. Keep authority with the operator.*
+### Give AI agents tools without giving them a blank cheque.
 
-**A local-first security gateway for AI agents and Model Context Protocol (MCP) tools.**  
-**Default-deny policy · Human approval · Rootless Linux broker · Auditable tool execution**
+**CATL (Caledapt Agent Trust Layer)** is a local-first security and permission gateway for **AI agents, LLM tools and Model Context Protocol (MCP) servers**.
 
+**Default-deny tool policy · Human approval · Rootless Linux isolation · Signed operator controls · Tamper-evident audit**
+
+[![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 ![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
-![Linux RC](https://img.shields.io/badge/protected%20broker-Linux%20RC-1769AA)
-![MCP](https://img.shields.io/badge/MCP-legacy%20%2B%20modern%20tools%20subset-7952B3)
-![Security review](https://img.shields.io/badge/security-internal%20testing%20only-F59E0B)
-![Licence](https://img.shields.io/badge/licence-evaluation%20only-64748B)
+![Linux RC](https://img.shields.io/badge/protected%20runtime-Linux-1769AA?logo=linux&logoColor=white)
+![MCP Security](https://img.shields.io/badge/MCP-security%20gateway-7952B3)
+![GitHub stars](https://img.shields.io/github/stars/BryanFiFife/CATL?style=flat&logo=github)
 
-[**Download evaluation source**](docs/GITHUB_SOURCE_PACKAGE_2026-11-09.md) · [**Install on Linux**](docs/INSTALL_LINUX.md) · [**How it works**](#how-catl-works) · [**Try the demo**](#quick-start-local-evaluation) · [**Linux deployment**](docs/DEPLOY_ROOTLESS_LINUX.md) · [**rc2 notes**](docs/RELEASE_NOTES_PUBLIC_V011_RC2.md) · [**Security limits**](#security-boundaries-and-limitations)
+[**Install CATL**](docs/INSTALL_LINUX.md) · [**How it works**](#how-catl-works) · [**Security model**](#security-boundaries) · [**rc2 notes**](docs/RELEASE_NOTES_PUBLIC_V011_RC2.md) · [**Report a vulnerability**](SECURITY.md)
 
-Built by **[Caledapt](https://caledapt.com)** in Scotland — *Make AI useful. Not mysterious.*
+Built by **[Caledapt](https://caledapt.com)** in Scotland · *Make AI useful. Not mysterious.*
+
+**If CATL solves a problem you care about, star the repo. It helps other AI-agent builders find it. ⭐**
 
 </div>
 
 > [!IMPORTANT]
-> **Status: v0.11.0rc2 — Linux-focused evaluation release candidate; not independently production-certified.** The project has passed substantial internal Linux tests and a reported four-identity broker demonstration. It has **not** passed production-equivalent host isolation, independent penetration testing, physical FIDO2 authorisation, off-host witnessing, or real provider-side settlement verification. Windows and macOS protected runtimes are not supported. See [acceptance evidence](docs/CATL_ACCEPTANCE_RC_2026-11-08.md) and [open gates](docs/ROADMAP_STATUS_2026-11-07.md).
+> **Current release: v0.11.0rc2 — open-source Linux release candidate.** CATL is licensed under **Apache-2.0**. It has substantial developer-run Linux regression, four-identity broker and installer smoke-test evidence, but it is not an independent security certification. Protected Windows/macOS runtimes are not claimed.
 
-> **9 November rc2 installer update:** the Linux installer now verifies the release manifest before privileged changes, installs into `/opt/catl/venv`, provisions separated service identities and IPC groups, preserves state/anchors, renders the reviewed systemd templates, bootstraps fresh anchored state, and gates live activation on `catl host-audit`. The installer suite passed **31/31** standard-library tests plus a **1,000-case hostile-manifest sweep**. A disposable Linux install/verify/reinstall passed with static systemd validation; this development container cannot run systemd as PID 1, so a real target-host activation remains a required deployment check. [Installer guide](docs/INSTALL_LINUX.md) · [acceptance evidence](docs/INSTALLER_ACCEPTANCE_2026-11-09.md).
+## Why CATL exists
 
-## Why CATL?
+AI agents are increasingly being connected to email, files, databases, browsers, internal APIs, payment systems and MCP servers. The dangerous part is not the language model itself — it is the moment a generated instruction becomes a **real tool action**.
 
-An AI agent might be allowed to *discover* a tool without being authorised to *run* it. Prompt instructions alone cannot establish an operating-system security boundary.
+Prompt rules such as *"ask before doing anything dangerous"* are useful UX, but they are not an operating-system security boundary.
 
-**CATL — Caledapt Agent Trust Layer** is a Python-based, local-first **AI agent tool security gateway**. It mediates supported MCP tool requests through pinned definitions, JSON Schema checks, explicit operator policy, revocable controls and one-use approvals. It records dispatch intents and outcomes in a tamper-evident local audit chain. When a tool's result cannot be verified, CATL can quarantine the uncertain action instead of blindly retrying it.
+CATL puts a separate trust layer between the agent and its tools:
 
-It is intended for **LLM agent developers**, **MCP server integrators**, and teams evaluating **human-in-the-loop AI tool permissions, action auditing and local AI agent security**.
+- the agent can discover supported tools without automatically being authorised to execute them;
+- exact tool definitions and schemas can be pinned;
+- policy is **default deny**;
+- sensitive calls can require explicit human approval;
+- approvals are bound to a specific action and are one-use;
+- the operator, agent and backend can run under separate Linux identities;
+- uncertain external effects are quarantined instead of blindly retried;
+- dispatch intent and outcomes are written to a tamper-evident local audit chain.
 
-**CATL is not an LLM, chatbot, antivirus product or universal sandbox.** It protects the tool paths that are actually routed through it. Any alternative tool, shell, plugin or network path must also be restricted by the host's real security configuration.
+In practical terms, CATL is an **AI agent permission gateway**, **MCP security layer**, **human-in-the-loop approval broker** and **local audit boundary** for tool-using agents.
+
+## The 10-second mental model
+
+```text
+AI agent
+   │
+   │ MCP tool request
+   ▼
+CATL broker ──► deny
+   │
+   ├──────────► require human approval
+   │
+   └──────────► execute exact permitted tool call
+                    │
+                    ▼
+              restricted backend
+                    │
+                    ▼
+          validate + audit outcome
+```
+
+The model is deliberately simple: **the agent proposes; CATL decides whether that proposal is allowed to become an action.**
+
+## What CATL gives you
+
+| Capability | What it does |
+|---|---|
+| 🔒 **Default-deny tool permissions** | Unknown or unapproved tool actions do not silently pass through |
+| 📌 **Pinned MCP tool definitions** | Detects changes to reviewed tool definitions instead of trusting names alone |
+| 🧩 **JSON Schema validation** | Validates supported tool arguments and responses before they cross the boundary |
+| ✋ **Human-in-the-loop approvals** | Supports exact-action approval for sensitive operations |
+| ♻️ **Replay protection** | Approved actions cannot simply reuse an old approval indefinitely |
+| 🐧 **Rootless Linux broker** | Separates broker, agent and backend service identities in the protected deployment model |
+| 🔐 **Signed operator authority** | Protected operator commands can use a separate Ed25519 software signing key |
+| 🧾 **Tamper-evident audit** | HMAC-linked receipts plus a separately stored checkpoint detect database-only rollback |
+| ⚠️ **Uncertain-effect quarantine** | Avoids dangerous automatic retries when an external side effect may already have happened |
+| 🔍 **Postcondition verification** | Optional local verification can check whether an expected file outcome really occurred |
+| 🖥️ **Operator overlay** | Minimisable desktop controls for approvals, pause state and incident review |
+| 🔌 **MCP interoperability** | Supports the audited legacy path and an explicitly bounded modern tools subset |
+
+## Who CATL is for
+
+CATL is built for people working on:
+
+- **MCP server security** and Model Context Protocol tool permissions;
+- **AI agent security** and LLM tool-use controls;
+- local or self-hosted AI agents that should not send authority to a third-party control plane;
+- human approval workflows for agentic automation;
+- AI governance where tool execution needs an auditable decision trail;
+- developers integrating agents with files, APIs, browsers, internal systems or other consequential tools;
+- security teams evaluating how to separate an AI agent from the credentials and authority of the human operating it.
+
+CATL is **not** an LLM, chatbot, endpoint antivirus product or universal sandbox. It only mediates paths that are actually routed through it. If the agent still has an unrestricted shell, alternate plugin system, direct API credential or unmediated network path, that route remains outside CATL's authority.
 
 ## How CATL works
 
 ```mermaid
 flowchart LR
     A["🤖 AI agent<br/>restricted Linux UID"] -->|"MCP tool request"| B["🛡️ CATL broker<br/>separate unprivileged UID"]
-    O["👤 Trusted operator<br/>separate UID + overlay"] -->|"Authorised controls / approvals"| B
-    B --> P{"Pinned tool + schema<br/>policy + controls"}
-    P -->|"Deny / needs approval"| D["⛔ Denial or approval request"]
-    P -->|"Permitted exact call"| T["⚙️ Tool backend<br/>separate UID"]
-    T --> V["🔎 Validate response<br/>optional file postcondition"]
-    V --> L["🧾 Local audit chain<br/>separate checkpoint"]
-    L --> R["✅ Report / ⚠️ quarantine"]
+    O["👤 Trusted operator<br/>separate UID + signed control"] -->|"Approvals / controls"| B
+    B --> P{"Pinned tool + schema<br/>policy + runtime controls"}
+    P -->|"Deny"| D["⛔ Block"]
+    P -->|"Approval required"| H["✋ Human decision"]
+    H -->|"Approved exact action"| T["⚙️ Restricted tool backend"]
+    P -->|"Allowed"| T
+    T --> V["🔎 Validate response<br/>optional postcondition"]
+    V --> L["🧾 Audit chain<br/>independent checkpoint"]
+    L --> R["✅ Outcome / ⚠️ quarantine"]
 ```
 
-In the **protected Linux configuration**, CATL uses distinct broker, agent, operator and backend identities, with Unix sockets and kernel peer-credential checks. The broker keeps its policy, secrets and authorisation state out of the agent process. The overlay runs under the trusted operator identity, not the agent identity.
-
-This separation is meaningful only when the system administrator also restricts direct shell access, network egress, alternate tool registries and filesystem permissions. **A different UID alone does not constitute a complete sandbox.**
-
-## What works today
-
-| Capability | Current implementation and evidence |
-|---|---|
-| **🔒 Default-deny tool control** | Explicit policy rules, pinned tool definitions, argument schemas and operator-controlled enable/disable switches |
-| **✋ Human-in-the-loop approvals** | Exact-action, single-use challenges and signed **software-key** operator authority; replay and Pause/dispatch regression tests |
-| **🐧 Rootless Linux broker** | Separate process identities and authenticated agent/operator/backend sockets; tested in a disposable four-UID Linux setup |
-| **🖥️ Operator overlay** | Minimisable desktop UI for controls, approvals, pause and uncertain-action review; tested under Xvfb |
-| **🧾 Audit and rollback detection** | HMAC-linked local receipts and a separately stored checkpoint; detects database-only rollback, not compromise of both records |
-| **⚠️ Fail-closed uncertain actions** | Durable pre-dispatch intent, quarantine after inconclusive effects, no blind automatic replay |
-| **🔍 Result and file verification** | Validates supported MCP replies and pinned `outputSchema`; optional local file digest/postcondition checks |
-| **🔌 MCP interoperability** | Legacy MCP and an explicitly bounded modern tools-only subset; unsupported methods fail closed |
-| **🔏 Release verification tooling** | Source/manifest checks, deterministic archive checks and software-key signature tooling; not independent or hardware-backed provenance |
-
-CATL also includes experimental foundations for WebAuthn assertion checks, a modern upstream adapter, external-effect reconciliation, platform proof checks and a mutual-TLS audit witness. **Those foundations are not claims that physical hardware, Windows/macOS protection, live providers or independently operated witnesses have passed acceptance.**
+In the protected Linux design, CATL separates the broker, agent and tool backend into distinct identities and uses Unix sockets with kernel peer-credential checks. The broker owns policy and audit authority; the untrusted agent does not.
 
 ## See the operator controls
 
-![CATL operator overlay showing per-tool controls, approval workflow and an uncertain action in synthetic demo state](docs/assets/control-overlay.png)
+![CATL operator overlay showing per-tool controls, approval workflow and uncertain-action review](docs/assets/control-overlay.png)
 
-*Actual CATL desktop overlay screenshot using synthetic demonstration state, not a production deployment.* The protected operator UI communicates with the broker through a separate authenticated socket. [Operator signing model](docs/OPERATOR_SIGNING_V011.md) · [Incident recovery](docs/INCIDENT_RECOVERY_V09.md).
+*Actual CATL overlay using synthetic demonstration state.* The protected UI communicates with the broker over its operator channel rather than reading the broker's secret state directly.
 
-## Quick start: local evaluation
+## Quick start
 
-**Requirements:** Python 3.11 or later. Use a disposable virtual environment and review the dependencies pinned in [`pyproject.toml`](pyproject.toml).
+### Local development / demonstration
+
+**Requirements:** Python 3.11+
 
 ```bash
-# Clone the repository after you have access.
 git clone https://github.com/BryanFiFife/CATL.git
 cd CATL
+
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e .
 
-# Generate the example policy and run the native tests.
 python examples/make_policy.py
 PYTHONPATH=src python -m unittest discover -s tests -q
+```
 
-# Deliberately UNPROTECTED demonstration (do not use with real credentials).
+For an intentionally unprotected local demonstration:
+
+```bash
 PYTHONPATH=src python -m catl run \
   --config examples/policy.json \
   --state-dir "$HOME/.catl-demo" \
   --allow-unsandboxed -- python examples/mock_server.py
 ```
 
-The example reads MCP JSON-RPC requests from standard input; **it does not launch a chat interface**. The `--allow-unsandboxed` option is explicitly an evaluation bypass and is not suitable for consequential or untrusted agent workloads.
+`--allow-unsandboxed` means exactly what it says: it is for a disposable demonstration, not a consequential agent workload.
 
-### Protected Linux deployment
+### Protected Linux installation
 
-Protected deployment requires administrator-provisioned OS users, private directories, operator keys, separate backend supervision and correctly configured IPC. **Do not substitute the demo command for a production service.**
-
-Read [Rootless Linux deployment](docs/DEPLOY_ROOTLESS_LINUX.md), [Operator signing](docs/OPERATOR_SIGNING_V011.md), and the [Linux security and acceptance checklist](docs/ROADMAP_STATUS_2026-11-07.md) first. Example systemd service files in [`packaging/systemd/`](packaging/systemd/) remain evaluation templates requiring real-host adaptation and testing.
+The rc2 installer verifies the release manifest before privileged changes, installs CATL into `/opt/catl/venv`, provisions separated service identities and IPC groups, preserves existing state/anchors, renders the reviewed systemd profiles and bootstraps fresh anchored state.
 
 ```bash
-# Run as the correctly provisioned broker identity, with real UIDs and paths.
-catl doctor --config /etc/catl/policy.json \
-  --state-dir /var/lib/catl/state \
-  --anchor-path /var/lib/catl-anchor/head.json \
-  --agent-uid 10021 --operator-uid 10022 --backend-uid 10023
+python3 tools/catlinstall.py --check --source-root .
 
-# Inspect installed units; static templates alone are not proof of confinement.
-catl host-audit --broker-unit catl-broker.service \
-  --backend-unit catl-backend.service
+sudo python3 tools/catlinstall.py --install \
+  --source-root . \
+  --operator-user "$USER" \
+  --operator-public-key /path/to/operator-public.hex
 ```
 
-The provided UIDs are examples, not installation defaults.
+Then verify the installed host:
 
-## Test evidence — what has and has not passed
+```bash
+sudo python3 tools/catlinstall.py --verify-installed \
+  --operator-user "$USER"
+```
 
-| Test | Evidence currently available |
+Read the full **[Linux installation guide](docs/INSTALL_LINUX.md)** before installing on a real host.
+
+## Security architecture
+
+CATL's protected Linux deployment is based on four roles:
+
+| Role | Purpose |
 |---|---|
-| Linux native unittest | **707 discovered; 2 platform-specific skips** in the root/Xvfb run reported by Hermes on 8 November 2026 |
-| Pytest | **679 passed, 28 skipped, 426 additional subtests** as reported in the same VM handoff |
-| Hermes integration verifier | **22/22** reported |
-| Four-identity Linux broker and IPC smoke | **Passed** in a disposable Ubuntu VM, including disarmed/armed/approval-required flows and unauthorised socket denial (reported) |
-| Kernel UID/socket isolation matrix | **11/11** reported |
-| Production-equivalent Linux systemd/LSM/egress | **Not accepted** — disposable test services were not a completed production hardening evaluation |
-| Windows/macOS protected runtime, physical FIDO2, off-host witness and real external provider readback | **Not accepted / not performed** |
-| Independent third-party security audit | **Not performed** |
+| `catl-broker` | Owns policy, audit state, approval authority and independent anchor |
+| `catl-agent` | Represents the untrusted AI-agent side of the boundary |
+| Human operator | Holds trusted interactive authority and operator signing material |
+| `catl-tools` | Runs the restricted tool backend separately from broker authority |
 
-These are developer-run or Hermes-reported results. A previous acceptance document records a different intermediate commit and archive size; the final handoff reports commit `6ccd65009cfb88dc5d4b4c164d9725a98b4cebe5` with a 209-file Git tree. Raw VM logs are not committed in the repo, so this README does **not** claim independent reproduction of that run.
+Separate IPC groups gate agent, operator and backend channels. The reviewed systemd profiles use no ambient capabilities, AF_UNIX-only address families, private networking, strict filesystem protections and resource limits.
 
-To verify your own checkout and run the existing suite:
+A different UID alone is not magic. The host still has to prevent the agent from reaching the same capability through another path.
 
-```bash
-PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
-python -m pytest tests -q
-# An isolated disposable Linux host with administrator privileges is needed for:
-# PYTHONPATH=src python tests/integration_rootless_e2e.py
-```
+## Test and release evidence
 
-[Release-candidate acceptance report](docs/CATL_ACCEPTANCE_RC_2026-11-08.md) · [Offline native acceptance runner](tools/offline_native_acceptance.py) · [Security reporting](SECURITY.md).
+CATL deliberately separates **evidence** from **claims**.
 
-## Security boundaries and limitations
+Current public evidence includes:
 
-- **Mediation, not magic:** CATL cannot stop an agent from using an unmediated shell, plugin or network tool that the host still exposes.
-- **Hardware presence is not implemented end-to-end:** current Ed25519 operator grants use software keys. WebAuthn assertion verification alone is not physical enrolment and presence testing.
-- **External effects are not automatically proven:** a successful tool reply is not confirmation that an email arrived, a payment settled or an API mutation persisted. Uncertain effects must be reconciled safely.
-- **Audit is local first:** a separate local checkpoint detects database-only rollback; independent off-host witnessing remains unverified.
-- **Linux-only protected mode:** the full protected broker has not been validated on Windows or macOS.
-- **No independent certification:** internal red-team tests are not a substitute for an external penetration test or a hardened production host.
-- **High-impact operations:** do not connect unrestricted live payments, email sending, production credentials or other consequential actions without completing the relevant safety and deployment gates.
+- **31/31 installer regression tests** for the rc2 installer;
+- **1,000/1,000 hostile manifest cases rejected** in deterministic adversarial coverage;
+- disposable Linux **install → verify → reinstall** smoke testing with state/anchor preservation;
+- rendered broker/backend units passing `systemd-analyze verify`;
+- offline systemd security analysis scoring **1.3 / OK** for both reviewed service profiles;
+- the rc1 core baseline records **278 passing Linux regressions**;
+- a real four-UID signed rootless E2E records forgery denial, tool execution, approval/replay control, audit verification, channel isolation and broker-key denial.
 
-**Threat-model principle:** the broker cannot secure a host administrator, compromised kernel, stolen operator key or tools outside its enforced boundary. Read [responsible disclosure](SECURITY.md) and the [six-workstream implementation report](docs/SIX_GATE_IMPLEMENTATION_2026-11-07.md) before deploying.
+See **[rc2 release notes](docs/RELEASE_NOTES_PUBLIC_V011_RC2.md)** and **[installer acceptance evidence](docs/INSTALLER_ACCEPTANCE_2026-11-09.md)** for the exact scope.
+
+These are developer-run tests, not an external penetration-test certificate.
+
+## Security boundaries
+
+CATL is designed to fail closed where possible, but its boundary is intentionally explicit:
+
+- **Mediated tools only.** CATL cannot control a shell, plugin, credential or network route that bypasses it.
+- **Operator compromise remains operator compromise.** A stolen operator identity/key is outside the guarantees of a software approval layer.
+- **Current protected runtime is Linux-focused.** Windows AppContainer and macOS sandbox enforcement are not claimed end-to-end.
+- **Software signing is not physical presence.** WebAuthn/FIDO2 foundations exist, but current operator approval does not claim completed hardware-presence assurance.
+- **External side effects require authoritative reconciliation.** A tool returning `success` does not prove an email arrived, a payment settled or a remote mutation persisted.
+- **Local audit is not an independent witness.** The separate checkpoint detects database-only rollback, not an attacker able to rewrite all local trust material.
+- **Open source is not security certification.** Review the code, threat model and deployment before connecting consequential tools.
+
+Read **[SECURITY.md](SECURITY.md)** and the **[threat model](docs/THREAT_MODEL.md)** before production deployment.
+
+## CATL vs prompt-only safeguards
+
+| Prompt-only instruction | CATL |
+|---|---|
+| “Do not use dangerous tools” | Explicit deny/allow/approve policy outside the model |
+| “Ask me before sending” | One-use approval bound to the pending action |
+| “Only use this schema” | Runtime schema validation and pinned tool definitions |
+| “Remember what you did” | Durable local audit receipts and checkpointing |
+| “Don’t retry if unsure” | Uncertain-effect quarantine and reconciliation workflow |
+| Same process/user as agent | Protected Linux mode separates broker, agent and backend identities |
+
+The goal is not to replace good prompting. It is to make the final authority decision somewhere more trustworthy than the prompt itself.
+
+## MCP and agent integration
+
+CATL is agent-agnostic at the trust-layer level. The repository includes Hermes integration tooling and a keyless MCP shim. Compatible agents can route tool calls through the broker rather than receiving unrestricted tool credentials directly.
+
+Useful starting points:
+
+- [Hermes integration](integrations/hermes/README.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Rootless Linux deployment](docs/DEPLOY_ROOTLESS_LINUX.md)
+- [Operator signing](docs/OPERATOR_SIGNING_V011.md)
+- [Incident recovery](docs/INCIDENT_RECOVERY_V09.md)
+- [Release verification](docs/RELEASE_ATTESTATIONS.md)
 
 ## Roadmap
 
-| Workstream | Current state |
-|---|---|
-| Production Linux service isolation, egress confinement and real Hermes tool-registry bypass testing | **Incomplete — host-level acceptance required** |
-| Hardware-backed FIDO2/WebAuthn approval with one-use credential enrolment and revocation | **Partial primitives only** |
-| Windows AppContainer/restricted-token runtime and authenticated named pipes | **Not implemented/accepted end-to-end** |
-| macOS sandbox, launchd and peer-authenticated runtime | **Not implemented/accepted end-to-end** |
-| Official SDK/transport interoperability beyond the bounded MCP tools subset | **Incomplete** |
-| Real provider-specific idempotency, authoritative readback and recovery | **Incomplete** |
-| Independently hosted signed witness and externally reviewed release provenance | **Incomplete** |
-| Updated SBOM, independent penetration testing, reproducible publication and licensing | **Incomplete** |
+Important work beyond rc2 includes:
 
-The roadmap tracks product engineering and verification separately. See [current roadmap](docs/ROADMAP_STATUS_2026-11-07.md) and [release gates](docs/PRODUCTION_ACCEPTANCE_V09.md). PRs should not claim a security guarantee without code, a reproducer and tests.
+- deeper production-host Linux hardening and adversarial deployment testing;
+- hardware-backed operator presence and recovery;
+- protected Windows and macOS runtimes;
+- broader MCP transport / SDK conformance;
+- provider-specific authoritative outcome verification;
+- independently operated witness infrastructure;
+- external penetration testing and reproducible signed release provenance.
+
+See [the detailed roadmap](docs/ROADMAP_STATUS_2026-11-07.md).
 
 ## Frequently asked questions
 
 <details>
 <summary><strong>Is CATL an AI agent firewall?</strong></summary>
 
-CATL can be described as an **AI agent tool permission gateway** or **MCP security layer**. It denies requests that violate its configured policy and tracks approvals. It is not a universal network firewall or protection for tools that bypass its broker.
+“AI agent firewall” is a useful shorthand, but CATL is more precisely an **AI agent tool permission gateway**. It controls mediated tool execution rather than arbitrary network traffic.
 </details>
 
 <details>
 <summary><strong>Does CATL stop prompt injection?</strong></summary>
 
-No tool layer can guarantee that an agent never follows malicious instructions. CATL is designed to prevent an instruction from becoming an unauthorised **mediated tool action**. Unmediated capabilities remain the deployer's responsibility.
+CATL does not promise to stop malicious text from influencing an LLM. Its purpose is to stop an influenced model from automatically turning that instruction into an unauthorised mediated tool action.
 </details>
 
 <details>
-<summary><strong>Does it work with Hermes or other MCP-capable agents?</strong></summary>
+<summary><strong>Does CATL support MCP?</strong></summary>
 
-The repository includes Hermes evaluation integration tests and an MCP tool gateway intended to work with compatible agents. Live, production-hardened Hermes deployment and each agent's effective tool inventory require their own checks.
+Yes. CATL mediates supported Model Context Protocol tool calls, with an audited legacy path and a deliberately bounded modern tools subset. Unsupported behaviour fails closed rather than silently broadening authority.
 </details>
 
 <details>
-<summary><strong>Is this a secure Windows or macOS application?</strong></summary>
+<summary><strong>Can I use CATL commercially?</strong></summary>
 
-No. Some portable components and platform proof helpers exist, but the protected CATL broker is currently a Linux-focused candidate. Do not claim AppContainer or macOS sandbox enforcement without host-native evidence.
+Yes. CATL is open source under the **Apache License 2.0**, which permits commercial use, modification and redistribution subject to the licence terms.
 </details>
 
 <details>
-<summary><strong>Is CATL open source and free to redistribute?</strong></summary>
+<summary><strong>Does CATL send my tool authority to a cloud control plane?</strong></summary>
 
-**Not under the currently committed licence.** The existing [`LICENSE`](LICENSE) permits private evaluation only and does not grant redistribution, modification or production deployment rights. Free availability and open-source licensing are different decisions. The owner must approve and commit a replacement licence before public redistribution rights can be advertised.
+No by design. CATL's trust decisions and audit state are local-first. The tools you connect may of course contact external services according to their own behaviour and your host policy.
 </details>
 
-## Documentation and community
+## Contributing
 
-- [Security disclosure policy](SECURITY.md) — report vulnerabilities responsibly; do not publish working exploits against live installations.
-- [Rootless deployment guide](docs/DEPLOY_ROOTLESS_LINUX.md) — four-identity Linux architecture and operator setup.
-- [Hermes integration](integrations/hermes/README.md) — integration scope and test instructions.
-- [Incident recovery](docs/INCIDENT_RECOVERY_V09.md) — uncertain actions and operator reconciliation.
-- [Release verification](docs/RELEASE_ATTESTATIONS.md) — source and software signature tooling.
-- [Release-candidate evidence](docs/CATL_ACCEPTANCE_RC_2026-11-08.md) — prior VM run and known exclusions.
-- [Public evaluation release notes](docs/RELEASE_NOTES_PUBLIC_V011.md) — supported scope, test baseline and distribution caveats.
+Issues, reproducible bug reports, documentation improvements and security-minded contributions are welcome.
 
-To discuss reproducible bugs or suggest improvements, use [GitHub Issues](https://github.com/BryanFiFife/CATL/issues). For vulnerabilities, follow [`SECURITY.md`](SECURITY.md) instead of opening a public issue.
+- Use **GitHub Issues** for normal bugs and feature proposals.
+- Use **[SECURITY.md](SECURITY.md)** for vulnerabilities; do not publish a working exploit against live deployments as a normal issue.
+- Include a reproducer and tests for security-boundary changes wherever possible.
+- Contributions are submitted under the project's Apache-2.0 licence unless explicitly stated otherwise.
 
-## Licence and maintainer
+If you build something useful with CATL, **star the repository, link back to it, and tell us what agent/tool stack you integrated**. Real integrations make the project better and help other builders discover safer patterns for agentic AI.
 
-Copyright © 2026 Caledapt. **Private evaluation terms currently apply**; see [`LICENSE`](LICENSE). There is no authorised open-source grant in this revision. A free public distribution decision does not itself override the licence text.
+## Licence
+
+Copyright © 2026 Caledapt.
+
+CATL is licensed under the **[Apache License 2.0](LICENSE)**. Commercial use, modification and redistribution are permitted under the terms of that licence. See [`NOTICE`](NOTICE) for attribution information.
 
 Maintained by **[Caledapt](https://caledapt.com)** · Perth, Scotland 🇬🇧
 
 <div align="center">
 
-**Protect the action. Verify the outcome. Preserve the evidence.**
+### Protect the action. Verify the outcome. Preserve the evidence.
+
+**Open-source security infrastructure for tool-using AI agents.**
 
 </div>
