@@ -96,7 +96,7 @@ class UnitAudit(unittest.TestCase):
                        ReadWritePaths='/var/lib/catl-tools/work /run/catl-tools',
                        MemoryMax=str(MEMORY_CEILINGS['catl-tools']))
         def output(props):
-            return '\\n'.join(k + '=' + str(v) for k, v in props.items()) + '\\n'
+            return '\n'.join(k + '=' + str(v) for k, v in props.items()) + '\n'
         trusted = SimpleNamespace(st_uid=0, st_mode=stat.S_IFREG | 0o755)
         with patch('catl.host_audit.Path.stat', return_value=trusted):
             for field,value in (
