@@ -101,3 +101,16 @@ The full private development ZIP (PR #10, parent `ba5fc502...`) was finally avai
 ## Successful full native current-development acceptance — 8 November 2026
 
 Following the tested compatibility/security-sanity repairs, the complete uploaded CATL source passed **486 unittest cases: 484 passed, 2 native-Windows skips, 0 failures**, running all five real Tk overlay GUI tests under Xvfb. The independent pytest runner passed **484 tests plus 172 subtests**, with only the same two Windows-only skips. Both current Linux broker integration scripts passed, including rootless four-UID separation, signed operator approvals and real MCP shim, and the Hermes v1.4 evaluation verifier passed **22/22**. Static security scan, CLI compilation and deterministic release file-set verification passed after carefully scoped test/scan corrections. See [acceptance evidence and exclusions](NATIVE_SOURCE_ACCEPTANCE_2026-11-08.md). **This completes the scoped native Linux testing milestone, not the six broad production-release gates.** Hardware-backed signers, installed live Hermes confinement, Windows/macOS sandbox hosts, real provider effects, remote witness and independent pentest remain open.
+
+## 9 November 2026 — live systemd resource preflight hardening
+
+Added a fail-closed effective-property extension to `catl host-audit` for
+finite reviewed `MemoryMax`, zero swap, task and core-dump ceilings, absence
+of explicit `IPAddressAllow` egress exceptions and nine other runtime
+settings. A weakened or unbounded active unit must not pass solely because
+its static evaluation template looked safe. Source-native regression fixtures
+and 12 focused helper tests were added; the helper's isolated tests passed
+locally. **No real systemd service was installed or tested during this edit,
+and the complete CATL native suite was not rerun.** This improves an
+acceptance prerequisite; **the combined Linux host-hardening milestone remains
+OPEN**. See [live systemd gate evidence](LIVE_SYSTEMD_GATES_2026-11-09.md).
