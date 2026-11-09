@@ -5,7 +5,7 @@ Release asset or a production-certified installer.
 
 Download the complete tracked source at the fixed evaluation-snapshot branch:
 
-https://github.com/BryanFiFife/CATL/archive/refs/heads/release/v0.11.0rc1-evaluation-20261109.zip
+https://github.com/BryanFiFife/CATL/archive/refs/heads/release/v0.11.0rc1-evaluation-20261109-r2.zip
 
 This link works for viewers who are authorised to access the private
 repository. It will become publicly accessible only if the owner separately
@@ -37,9 +37,9 @@ complete current source in the isolated ChatGPT execution environment.
 
 ## Acceptance and licensing
 
-- New scoped tests: 36/36 source-exact offline unittests, including 10,000
+- New scoped tests: 39/39 source-exact offline unittests, including 10,000
   deterministic hostile systemd property mutations. See
-  [9 November evidence](LOCAL_ACCEPTANCE_2026-11-09.md).
+  [earlier offline evidence](LOCAL_ACCEPTANCE_2026-11-09.md) and [mount/namespace fix](MOUNT_NAMESPACE_GUARD_2026-11-09.md).
 - Earlier full Linux 707-discovery acceptance evidence is historical to an
   **older commit** and was not rerun at the latest snapshot.
 - Linux real-host systemd/LSM/egress, live Hermes, physical FIDO2, Windows,
