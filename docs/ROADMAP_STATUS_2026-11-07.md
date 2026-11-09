@@ -135,3 +135,24 @@ as a GitHub-generated full-repository ZIP at the fixed
 `release/v0.11.0rc1-evaluation-20261109` branch, but there is
 **no GitHub Release object**. See [scoped evidence](LOCAL_ACCEPTANCE_2026-11-09.md)
 and [archive details](GITHUB_SOURCE_PACKAGE_2026-11-09.md).
+
+## 9 November 2026 — bind mount and namespace acceptance bypass fixed
+
+The existing `catl host-audit` incorrectly accepted a reviewed broker
+profile even after a drop-in added a writable bind mount
+(`BindPaths=/tmp:/etc/catl`), selected an unreviewed network namespace
+(`NetworkNamespacePath=/run/netns/host`), or joined another service's
+namespace (`JoinsNamespaceOf=untrusted.service`). Those three false
+acceptances were reproduced on source-exact code before the fix.
+
+The revised effective-property checks now refuse seven unreviewed mount and
+namespace controls. **39/39** isolated Python unittest cases passed;
+**39/39 pytest** cases plus **110 pytest subtests** passed. This includes
+10,000 deterministic negative service-property mutations expanded to include
+the new settings, and integrated `host-audit` rejection tests. Both reviewed
+systemd templates passed `systemd-analyze verify` together on temporary
+sanitised copies and received offline exposure score 1.6 each.
+
+This is **not** a full CATL native checkout run or real-host sandbox
+enforcement proof. All six combined production GA milestones remain **open**.
+See [reproduction and evidence](MOUNT_NAMESPACE_GUARD_2026-11-09.md).
