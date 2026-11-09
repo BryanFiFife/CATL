@@ -39,4 +39,3 @@ def test_manifest_consistent():
     assert isinstance(files, dict)
     mismatch = [rel for rel, digest in (files or {}).items() if not (ROOT / rel).exists()]
     assert not mismatch, mismatch[:3]
-PYEOF
