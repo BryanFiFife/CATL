@@ -35,7 +35,7 @@
     "docs/OS_SERVICE_PROFILE_HARDENING_V011.md": "1b2ba774f8796ecd4b3c6b72453f273a330edb386d575ff6003e1ee2fe1a33d0",
     "docs/PRODUCTION_ACCEPTANCE_V08.md": "97951802b8bfe1d273095d6e538b35b206fc9a129335c2e1a8933cce4b800dfc",
     "docs/PRODUCTION_ACCEPTANCE_V09.md": "92ee623d7020a88b7c20ce70e6974f66b8c6295ec0bc6bdeca416b25ca1c6198",
-    "docs/PUBLIC_RELEASE_HANDOFF_2026-11-09.md": "78e8162c8a4a5abb511d9f376e1fbdb4876dd6a182979fe2f8e64072c5dab4f5",
+    "docs/PUBLIC_RELEASE_HANDOFF_2026-11-09.md": "ace83bfb9051e37f28dd68d775da4c2860a7d8063a0c19615c11a7190f73af05",
     "docs/RED_TEAM_ASSESSMENT_V010.md": "bd49c559e47c496f9360e4d053469dae0b5ecf6bceb55306c15b6fb8d5c7077d",
     "docs/RED_TEAM_ASSESSMENT_V011.md": "cbee21dca18357b6d37131dd742ac4703f9b317162141d87ac7137927d2b13ea",
     "docs/RELEASE_ACCEPTANCE_STATUS_2026-11-08.md": "c8356da66fb5abe424f863b792be549c08aad96e379805981469efa5773cba13",
@@ -164,6 +164,7 @@
     "tests/test_pause_race_v011.py": "89363e78885986ad6318cc47e6ab679ccd572c4480e8389bb228e8758bd67902",
     "tests/test_platform_proofs.py": "61cca4756d4a13634e193688197fb3a5880f35ce11331cb88bf6ca5d496f3465",
     "tests/test_policy.py": "4e38a061f6182d8b753863801bb4ec7fa17f1201ab709a2382f1603e33fde7f0",
+    "tests/test_publish_github_release.py": "5e4da92db33a3cf8ba14fe502d93254a75ba993856011a7336286d8191e7f5d5",
     "tests/test_recovery_drill.py": "e620bbdecbde43d54dd6e157b50cb76691581524ce84d64eb75ff4a1722063cf",
     "tests/test_redteam_dos_v010.py": "4993a2e2df269c0f9ab8d4a9eb90c8e93f40543909382860b661a754218d8b0e",
     "tests/test_redteam_reply_v010.py": "68cc60a7cd9516b1bc8dc762aced804df4b9ca7f3c7df9af425fdf3d046b2cd0",
@@ -204,6 +205,7 @@
     "tools/incident_drill.py": "dc0fcb48961143444ec7173d9a95cdcac6d11deaf5b6c28a3fb91688b0f0d878",
     "tools/linux_kernel_identity_matrix_v14.py": "e87e863a627571bdffa3eaa1dfac8f6e5f2603c8cf17a5d2bbae09cacfab2b9e",
     "tools/offline_native_acceptance.py": "310d23ac88c1e629b6fdce1b864933649d63b475ebbdd14450fb610fb0ed9751",
+    "tools/publish_github_release.py": "bf8d3f8a782989d4956d0744e8e20af417e3e7d6779dafd0069ca90cb720f8d7",
     "tools/recovery_drill.py": "35c862e708480ebc2c5fe9555516883643dbef3d5d52bf7da4a293459dc7a1ee",
     "tools/release_attest.py": "8293c6d8e31f1f8c23df0a37bd648ce431ecb462a78f42b9189d743d43450a34",
     "tools/release_pack.py": "cf932165e8d201dcde718191b2f05620702435c077598d576319dc6c05284279",
@@ -216,6 +218,6 @@
   "name": "caledapt-agent-trust",
   "release_type": "private-linux-hardening-release-candidate",
   "signed": false,
-  "source_commit": "00e23d2b08cf07fde6e4e307d30edba0a49a38d2",
+  "source_commit": "bfe2a7d2183186d026f97950c12437080351681c",
   "version": "0.11.0rc1"
 }
