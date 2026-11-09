@@ -116,11 +116,17 @@ def publish(gh: str, expected: str, archive: Path, checksum: Path, notes: Path) 
                    "--title", f"CATL {VERSION} — Linux evaluation pre-release",
                    "--notes-file", str(notes), "--draft", "--prerelease",
                    "--latest=false"])
-    payload = json.loads(checked([gh, "api", f"repos/{REPO}/git/ref/tags/{TAG}"]))
-    tag_sha = payload.get("object", {}).get("sha")
-    tag_type = payload.get("object", {}).get("type")
-    if tag_type != "commit" or tag_sha != expected:
-        raise PublishError(f"release created but tag is not at reviewed commit: {tag_sha}")
+    # GitHub drafts can have no backing Git tag until they are published.
+    # Verify the draft's target_commitish and attached assets instead.
+    payload = json.loads(checked([gh, "api", f"repos/{REPO}/releases/tags/{TAG}"]))
+    if (payload.get("tag_name") != TAG or payload.get("target_commitish") != expected
+            or payload.get("draft") is not True):
+        raise PublishError("created draft has unexpected tag, commit or publication state")
+    found = {asset.get("name"): asset for asset in payload.get("assets", [])}
+    for path in (archive, checksum):
+        asset = found.get(path.name)
+        if not asset or asset.get("size") != path.stat().st_size:
+            raise PublishError("created draft missing expected uploaded asset: " + path.name)
     return url
 
 
