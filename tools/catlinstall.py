@@ -1,7 +1,20 @@
 #!/usr/bin/env python3
+"""CATL Linux deployment preflight and reviewed-unit renderer.
+
+The privileged installer is intentionally disabled until real Linux acceptance
+and anchored-key recovery procedures exist. Nothing here provisions host state.
+"""
 from __future__ import annotations
-import argparse, hashlib, json, os, pathlib, shlex, shutil, subprocess, sys, tempfile
-from pathlib import Path
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path, PurePosixPath
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CATL_VENV = Path("/opt/catl/venv")
@@ -10,149 +23,199 @@ CATL_ANCHOR = Path("/var/lib/catl-anchor")
 CATL_WORK = Path("/var/lib/catl-tools/work")
 CATL_SYSTEMD = Path("/etc/systemd/system")
 CATL_POLICY = Path("/etc/catl/policy.json")
-SYSTEMD_TEMPLATE_BROKER = """[Unit]
-Description=CATL broker (isolated, non-root)
-After=network.target
 
-[Service]
-Type=simple
-User=broker
-Group=broker
-AmbientCapabilities=CAP_NET_BIND_SERVICE
-PrivateTmp=yes
-NoNewPrivileges=yes
-ProtectSystem=strict
-NoExecPaths=yes
-ExecStart=/opt/catl/venv/bin/python -m catl.broker
-StateDirectory=catl
-ConfigurationDirectory=catl
-RuntimeDirectory=catl-broker
-Restart=on-failure
-RestartSec=5
+UNIT_FILES = {
+    "broker": "catl-broker.service.example",
+    "backend": "catl-backend.service.example",
+}
+IDENTITY_TOKENS = {
+    "broker": ("AGENT_UID", "OPERATOR_UID", "AGENT_GID", "OPERATOR_GID", "TOOLS_UID"),
+    "backend": ("BROKER_UID", "BACKEND_IPC_GID"),
+}
+COMMON_HARDENING = (
+    "NoNewPrivileges=true", "ProtectSystem=strict", "ProtectHome=true",
+    "PrivateNetwork=yes", "IPAddressDeny=any", "RestrictAddressFamilies=AF_UNIX",
+    "CapabilityBoundingSet=", "AmbientCapabilities=",
+)
 
-[Install]
-WantedBy=multi-user.target
-"""
-SYSTEMD_TEMPLATE_BACKEND = """[Unit]
-Description=CATL backend (isolated, non-root)
-After=catl-broker.service
 
-[Service]
-Type=simple
-User=tool
-Group=tool
-AmbientCapabilities=
-PrivateTmp=yes
-NoNewPrivileges=yes
-ProtectSystem=strict
-ExecStart=/opt/catl/venv/bin/python -m catl.backend
-StateDirectory=catl-tools
-ConfigurationDirectory=catl
-RuntimeDirectory=catl-backend
+class InstallerFailure(RuntimeError):
+    """Expected, fail-closed installer or preflight rejection."""
 
-[Install]
-WantedBy=multi-user.target
-"""
 
-class InstallerFailure(Exception): pass
+def verify_manifest(root: Path) -> int:
+    """Verify existing release files without changing any file or following symlinks."""
+    root = Path(root).resolve(strict=True)
+    manifest = root / "RELEASE_MANIFEST.json"
+    if manifest.is_symlink() or not manifest.is_file():
+        raise InstallerFailure("missing or unsafe release manifest")
+    try:
+        obj = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise InstallerFailure("unreadable release manifest") from exc
+    files = obj.get("files") if isinstance(obj, dict) else None
+    if not isinstance(obj, dict) or obj.get("algorithm") != "sha256" or not isinstance(files, dict) or not files:
+        raise InstallerFailure("invalid manifest schema or empty manifest")
+    for rel, expected in files.items():
+        if not isinstance(rel, str) or not rel or "\\" in rel:
+            raise InstallerFailure("invalid manifest path")
+        parts = PurePosixPath(rel)
+        if parts.is_absolute() or any(x in (".", "..") for x in rel.split("/")):
+            raise InstallerFailure("unsafe manifest path: %s" % rel)
+        if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+            raise InstallerFailure("invalid digest for: %s" % rel)
+        target = root.joinpath(*parts.parts)
+        if not target.is_file() or target.is_symlink() or not target.resolve().is_relative_to(root):
+            raise InstallerFailure("missing or unsafe manifest entry: %s" % rel)
+        # Reject a symlink in any path component, not merely the leaf.
+        parent = root
+        for component in parts.parts[:-1]:
+            parent = parent / component
+            if parent.is_symlink():
+                raise InstallerFailure("symlink in manifest path: %s" % rel)
+        sha = hashlib.sha256()
+        with target.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(65536), b""):
+                sha.update(chunk)
+        if sha.hexdigest() != expected:
+            raise InstallerFailure("hash mismatch: %s" % rel)
+    return len(files)
 
-def _ensure_dir(path):
-    if path.exists():
-        if path.is_symlink():
-            raise InstallerFailure("unsafe symlink at %s" % path)
-        if not path.is_dir():
-            raise InstallerFailure("conflicting non-directory at %s" % path)
-        return (path.stat().st_uid, path.stat().st_gid)
-    path.mkdir(parents=True, exist_ok=True)
-    return (path.stat().st_uid, path.stat().st_gid)
 
-def verify_manifest(root):
-    man = root / "RELEASE_MANIFEST.json"
-    if not man.exists(): raise InstallerFailure("missing manifest at %s" % man)
-    data = json.loads(man.read_text())
-    if data.get("algorithm") != "sha256" or not isinstance(data.get("files"), dict):
-        raise InstallerFailure("invalid manifest schema")
-    for rel, digest in data["files"].items():
-        p = root / rel
-        if not p.is_file(): raise InstallerFailure("missing managed entry: %s" % rel)
-    import hashlib
-    for rel, digest in data["files"].items():
-        p = root / rel
-        h = hashlib.sha256()
-        with p.open("rb") as f:
-            for chunk in iter(lambda: f.read(65536), b""): h.update(chunk)
-        if h.hexdigest() != digest: raise InstallerFailure("hash mismatch: %s" % rel)
+def detect_root(custom=None) -> Path:
+    root = Path(custom).resolve() if custom else REPO_ROOT
+    if not root.is_dir():
+        raise InstallerFailure("source root missing: %s" % root)
+    return root
 
-def detect_root(custom=None):
-    if custom:
-        r = Path(custom).resolve()
-        if not r.is_dir(): raise InstallerFailure("source root missing: %s" % r)
-        return r
-    if (REPO_ROOT / "RELEASE_MANIFEST.json").exists(): return REPO_ROOT
-    raise InstallerFailure("cannot auto-detect CATL root")
+
+def find_python(specified=None) -> str:
+    candidate = specified or sys.executable or "python3"
+    resolved = shutil.which(candidate)
+    if not resolved or not Path(resolved).is_file() or not os.access(resolved, os.X_OK):
+        raise InstallerFailure("no executable Python interpreter: %s" % candidate)
+    check = [resolved, "-c", "import sys; raise SystemExit(sys.version_info < (3, 11))"]
+    try:
+        subprocess.run(check, check=True, timeout=15, capture_output=True)
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        raise InstallerFailure("Python 3.11+ interpreter validation failed") from exc
+    return resolved
+
+
+def run_or_fail(command, *, timeout=300):
+    """Run a fixed argv without a shell; propagate errors and timeouts."""
+    if not isinstance(command, (list, tuple)) or not command:
+        raise InstallerFailure("missing subprocess argv")
+    return subprocess.run(list(command), check=True, timeout=timeout)
+
+
+def _check_unit_hardening(text: str, kind: str) -> None:
+    lines = set(text.splitlines())
+    for directive in COMMON_HARDENING:
+        if directive not in lines:
+            raise InstallerFailure("reviewed %s unit missing safeguard: %s" % (kind, directive))
+    required = (
+        ("User=catl-broker", "ExecStart=/usr/local/bin/catl broker")
+        if kind == "broker" else
+        ("User=catl-tools", "ExecStart=/usr/local/bin/catl backend-service")
+    )
+    if required[0] not in lines or not any(row.startswith(required[1]) for row in lines):
+        raise InstallerFailure("unexpected %s unit identity or CLI entrypoint" % kind)
+    if "AmbientCapabilities=CAP_NET_BIND_SERVICE" in text or "python -m catl." in text:
+        raise InstallerFailure("unreviewed capability or module entrypoint in %s unit" % kind)
+
+
+def render_unit_template(kind: str, *, root=None, identities=None) -> str:
+    """Read reviewed templates; optionally resolve strictly numeric UID/GID fields.
+
+    This only returns text. It never installs or enables a service.
+    """
+    if kind not in UNIT_FILES:
+        raise InstallerFailure("unknown CATL service: %s" % kind)
+    source = detect_root(root) / "packaging" / "systemd" / UNIT_FILES[kind]
+    if source.is_symlink() or not source.is_file():
+        raise InstallerFailure("reviewed unit template missing or unsafe: %s" % source)
+    text = source.read_text(encoding="utf-8")
+    _check_unit_hardening(text, kind)
+    if identities is None:
+        return text
+    required = set(IDENTITY_TOKENS[kind])
+    if not isinstance(identities, dict) or set(identities) != required:
+        raise InstallerFailure("missing/extra UID/GID substitutions")
+    for name in sorted(required):
+        number = identities[name]
+        if type(number) is not int or number < 1:
+            raise InstallerFailure("invalid non-root UID/GID: %s" % name)
+        if not re.search(r"\b" + name + r"\b", text):
+            raise InstallerFailure("expected template placeholder missing: %s" % name)
+        text = re.sub(r"\b" + name + r"\b", str(number), text)
+    # Render only the package CLI path, not an invented Python module entrypoint.
+    text = text.replace("/usr/local/bin/catl ", str(CATL_VENV / "bin/catl") + " ")
+    _check_rendered_unit(text, kind)
+    return text
+
+
+def _check_rendered_unit(text: str, kind: str) -> None:
+    lines = set(text.splitlines())
+    if not set(COMMON_HARDENING).issubset(lines):
+        raise InstallerFailure("rendered unit weakened security restrictions")
+    if not any(line.startswith("ExecStart=" + str(CATL_VENV / "bin/catl") + " ") for line in lines):
+        raise InstallerFailure("rendered unit lacks package CLI")
+    if any(re.search(r"\b" + p + r"\b", text) for p in IDENTITY_TOKENS[kind]):
+        raise InstallerFailure("unresolved UID/GID placeholder")
+
+
+def preparation_phase(root: Path) -> dict:
+    count = verify_manifest(root)
+    for directory in ("src", "tools", "examples", "packaging/systemd"):
+        if not (root / directory).is_dir():
+            raise InstallerFailure("required source directory missing: %s" % directory)
+    for kind in UNIT_FILES:
+        render_unit_template(kind, root=root)
+    return {"verified_manifest_entries": count, "reviewed_units": list(UNIT_FILES),
+            "installation_enabled": False}
+
 
 def preflight(args):
     root = detect_root(args.source_root)
-    verify_manifest(root)
-    print("[OK] preflight ready (source root: %s)" % root)
-    python = args.python
-    if not python or not Path(python).is_file():
-        for c in ["/usr/bin/python3.12", "python3"]:
-            if Path(c).is_file() and os.access(c, os.X_OK):
-                python = c; break
-    if not python: raise InstallerFailure("no runnable Python")
-    subprocess.run([python, "-c", "import sys; print('PY_OK', sys.version.split()[0])"], check=True)
-    print("[OK] interpreter discovered:", python)
+    plan = preparation_phase(root)
+    executable = find_python(args.python)
+    print("[OK] verified %s release files; reviewed service templates: %s" %
+          (plan["verified_manifest_entries"], ", ".join(plan["reviewed_units"])))
+    print("[OK] interpreter:", executable)
+    print("[BLOCKED] automated installation is disabled pending live Linux acceptance")
 
-def system_identity_ready(kind, env_function, user):
-    # placeholder for genuine OS(systemd) tests (offline)
-    if user in ("broker","tool","operator"):
-        return True
-    return False
-
-def run_or_fail(cmd, timeout=300):
-    subprocess.run(list(cmd), check=True, timeout=timeout)
-
-def preparation_phase(root):
-    return {"root_ok": True, "manifest_ok": True, "python_check": "planned", "users": ["broker","tool","operator"]}
-
-def installation_failed(args):
-    raise InstallerFailure("install phase marked incomplete by policy")
-
-class _Unused: pass
 
 def install(args):
-    root = detect_root(args.source_root)
-    verify_manifest(root)
-    if not hasattr(os, "geteuid") or os.geteuid() != 0:
-        raise InstallerFailure("--install requires root")
-    ids = preparation_phase(root)
-    print("PLAN:", ids)
-    raise InstallerFailure("install now refuses partial rollout until remote live proofs")
+    # Deliberately no mkdir, chown, account provisioning, venv or service changes.
+    # No privileged operation should occur until the entire transaction is vetted.
+    raise InstallerFailure("automated installation disabled: isolated Linux acceptance and key/anchor recovery unverified")
 
-def render_unit_template(kind):
-    if kind == "broker": return SYSTEMD_TEMPLATE_BROKER
-    if kind == "backend": return SYSTEMD_TEMPLATE_BACKEND
-    raise InstallerFailure("unknown service template: %s" % kind)
 
 def verify_installed(args):
-    files = [str(Path("/opt/carl-venv/bin/python")), str(CATL_VENV / "bin" / "python")]
-    missing = [f for f in files if not Path(f).exists()]
-    if missing:
-        raise InstallerFailure("missing required installed components: %s" % ", ".join(missing))
-    print("[OK] verify_installed ok (sample)")
+    # A file-existence check is insufficient evidence of a working trust boundary.
+    raise InstallerFailure("installed-state verification not implemented; refusing a false positive")
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--source-root", default=None)
-    ap.add_argument("--python", default="/usr/bin/python3.12")
-    ap.add_argument("--check", action="store_true")
-    ap.add_argument("--install", action="store_true")
-    ap.add_argument("--verify-installed", dest="verify_installed", action="store_true")
-    args = ap.parse_args()
-    if args.install: install(args)
-    elif args.verify_installed: verify_installed(args)
-    else: preflight(args)
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="CATL read-only deployment preflight (install disabled)")
+    parser.add_argument("--source-root")
+    parser.add_argument("--python", default=None)
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--check", action="store_true")
+    modes.add_argument("--install", action="store_true")
+    modes.add_argument("--verify-installed", action="store_true")
+    args = parser.parse_args(argv)
+    try:
+        if args.install:
+            install(args)
+        elif args.verify_installed:
+            verify_installed(args)
+        else:
+            preflight(args)
+    except (InstallerFailure, OSError) as exc:
+        parser.exit(1, "[FAIL] %s\n" % exc)
+
 
 if __name__ == "__main__":
     main()
