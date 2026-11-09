@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a private CATL GitHub draft pre-release without GitHub Actions.
+"""Create a public CATL GitHub draft pre-release without GitHub Actions.
 
 Runs local acceptance and the existing deterministic source packer first.
 Requires operator-owned GitHub CLI authentication. No automatic pushing,
@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REPO = "BryanFiFife/CATL"
-VERSION = "0.11.0rc1"
+VERSION = "0.11.0rc2"
 TAG = f"v{VERSION}"
 
 
@@ -90,14 +90,14 @@ def prepare(expected: str, output_dir: Path, *, run_tests: bool = True) -> tuple
     checksum = output_dir / f"CATL-{VERSION}-SHA256SUMS.txt"
     checksum.write_text(f"{digest}  {archive.name}\n", encoding="utf-8")
     notes = output_dir / f"CATL-{VERSION}-RELEASE-NOTES.md"
-    base = (ROOT / "docs" / "RELEASE_NOTES_PUBLIC_V011.md").read_text(encoding="utf-8")
+    base = (ROOT / "docs" / "RELEASE_NOTES_PUBLIC_V011_RC2.md").read_text(encoding="utf-8")
     notes.write_text(base + f"\n## Exact release artifact\n\n"
                      f"- Source commit: `{expected}`\n"
                      f"- SHA-256: `{digest}`\n"
                      "- Artifact is an **unsigned** source ZIP unless a separate "
                      "verified detached attestation is attached.\n"
-                     "- The current LICENSE permits **private evaluation only**; "
-                     "this draft is not open-source licensing or production GA.\n",
+                     "- Licensed under **Apache-2.0**; this pre-release is open source but is not "
+                     "independent security certification or production GA.\n",
                      encoding="utf-8")
     return archive, checksum, notes
 
@@ -113,7 +113,7 @@ def publish(gh: str, expected: str, archive: Path, checksum: Path, notes: Path) 
     # commits, run CI or change repository visibility.
     url = checked([gh, "release", "create", TAG, str(archive), str(checksum),
                    "--repo", REPO, "--target", expected,
-                   "--title", f"CATL {VERSION} — Linux evaluation pre-release",
+                   "--title", f"CATL {VERSION} — Open-source Linux security pre-release",
                    "--notes-file", str(notes), "--draft", "--prerelease",
                    "--latest=false"])
     # GitHub drafts can have no backing Git tag until they are published.
@@ -143,8 +143,6 @@ def main() -> int:
                         help="directory outside the checkout")
     parser.add_argument("--create-draft", action="store_true",
                         help="explicitly create draft GitHub Release through authenticated gh")
-    parser.add_argument("--ack-evaluation-license", action="store_true",
-                        help="acknowledge existing private-evaluation-only licence")
     args = parser.parse_args()
     try:
         archive, checksum, notes = prepare(args.expected_commit, args.output_dir)
@@ -152,8 +150,6 @@ def main() -> int:
                           "sha256": checksum.read_text().split()[0],
                           "notes": str(notes)}, sort_keys=True))
         if args.create_draft:
-            if not args.ack_evaluation_license:
-                raise PublishError("--ack-evaluation-license required before creating a draft")
             gh = shutil.which("gh")
             if not gh:
                 raise PublishError("GitHub CLI gh is required: https://cli.github.com/")
