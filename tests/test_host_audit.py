@@ -6,7 +6,7 @@ from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from catl.host_audit import assess_unit, parse_show, run, REQUIRED
-from catl.systemd_runtime_gates import MEMORY_CEILINGS, STRICT_PROPERTIES
+from catl.systemd_runtime_gates import MEMORY_CEILINGS, STRICT_PROPERTIES, NO_UNREVIEWED_MOUNTS_OR_NAMESPACES
 
 
 def acceptable():
@@ -63,6 +63,27 @@ class UnitAudit(unittest.TestCase):
                 props = dict(original)
                 props[name] = value
                 self.assertFalse(assess_unit('catl-broker.service',props,'catl-broker')['passed'])
+
+    def test_unreviewed_mount_namespace_profile_cannot_pass_integrated_host_audit(self):
+        base = acceptable()
+        for key, value in (
+            ('BindPaths', '/tmp:/var/lib/catl/state'),
+            ('BindReadOnlyPaths', '/root:/mnt/host-secrets'),
+            ('NetworkNamespacePath', '/run/netns/unsafe'),
+            ('JoinsNamespaceOf', 'public-net.service'),
+            ('RootDirectory', '/tmp/alternate-root'),
+            ('RootImage', '/tmp/alternate.img'),
+            ('TemporaryFileSystem', '/etc'),
+        ):
+            with self.subTest(field=key):
+                altered = dict(base)
+                altered[key] = value
+                report = assess_unit('catl-broker.service', altered, 'catl-broker')
+                self.assertFalse(report['passed'])
+                failed = {part['control'] for part in report['checks']
+                          if part['status'] == 'fail'}
+                self.assertIn('no_unreviewed_' + key, failed)
+        self.assertEqual(len(NO_UNREVIEWED_MOUNTS_OR_NAMESPACES), 7)
 
     def test_no_systemd_is_explicit_failure(self):
         with patch('catl.host_audit.subprocess.run',side_effect=FileNotFoundError('missing systemd')):
