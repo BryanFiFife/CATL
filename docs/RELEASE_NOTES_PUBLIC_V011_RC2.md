@@ -1,44 +1,63 @@
-# CATL v0.11.0rc2 — Linux installer release candidate
+# CATL v0.11.0rc2 — open-source Linux release candidate
 
-> **Public evaluation candidate; not independent production certification.**
+> **Apache-2.0 open-source release candidate.** This release is developer-tested security software, not an independent security certification.
 
-This candidate keeps the v0.11 protected broker/approval/audit architecture and adds a tested Linux installer plus clearer deployment verification.
+CATL (Caledapt Agent Trust Layer) is a local-first security gateway for AI agents and Model Context Protocol (MCP) tools. It adds a trust boundary between an agent and consequential tool execution using default-deny policy, pinned tool definitions, schema validation, human approval, separated Linux identities and tamper-evident audit state.
 
-## What changed from rc1
+## Highlights
 
-- functional `tools/catlinstall.py` Linux installation path
-- release-manifest verification before privileged changes
-- canonical `/opt/catl/venv`, `/etc/catl`, state, anchor and tool-work paths
-- dedicated broker/agent/tool OS identities and separate IPC groups
-- reviewed systemd templates rendered with actual non-root UID/GID values
-- state/anchor preservation and refusal of ambiguous automatic recovery
-- separately provisioned operator public verification key
-- fresh anchor bootstrap under the broker identity
-- static post-install verification with `systemd-analyze verify`
-- live activation path requiring both units active and then passing `catl host-audit`
-- offline/prebuilt-wheel support for curated deployment environments
-- 31 installer regression tests and a 1,000-case hostile-manifest sweep
+- **Apache License 2.0** — commercial use, modification and redistribution are permitted under the licence terms.
+- Functional Linux installer in `tools/catlinstall.py`.
+- Release-manifest verification before privileged changes.
+- Canonical `/opt/catl/venv`, `/etc/catl`, state, anchor and tool-work paths.
+- Dedicated broker/agent/tool OS identities and separate IPC groups.
+- Reviewed systemd templates rendered with actual non-root UID/GID values.
+- State/anchor preservation and refusal of ambiguous automatic recovery.
+- Separately provisioned operator public verification key.
+- Fresh anchor bootstrap under the broker identity.
+- Static post-install verification with `systemd-analyze verify`.
+- Live activation path requiring both units active and then passing `catl host-audit`.
+- Offline/prebuilt-wheel support for curated deployment environments.
+- Human-in-the-loop exact-action approvals and replay protection in the core broker.
+- Fail-closed uncertain-action handling and audit verification.
 
 ## Acceptance evidence
 
-In the isolated Linux development container:
+The rc2 installer work recorded:
 
-- installer tests: **31 passed / 0 failed / 0 errors**
-- hostile manifest cases: **1,000 rejected / 0 unexpected accepts**
-- disposable install: **pass**
-- post-install verification: **pass**
-- idempotent reinstall preserving state/anchor: **pass**
-- broker systemd static security score: **1.3 / OK**
-- backend systemd static security score: **1.3 / OK**
+- installer regression suite: **31 passed / 0 failed / 0 errors**;
+- deterministic hostile-manifest sweep: **1,000 rejected / 0 unexpected accepts**;
+- disposable Linux install: **pass**;
+- post-install verification: **pass**;
+- idempotent reinstall preserving state/anchor: **pass**;
+- broker systemd offline security score: **1.3 / OK**;
+- backend systemd offline security score: **1.3 / OK**.
 
-The CATL core code used by rc1 already recorded 278 passing Linux regressions and a four-UID signed rootless E2E. The installer branch did not alter that core logic until this rc2 version-label update.
+The unchanged rc1 core baseline records **278 passing Linux regressions** and a real four-UID signed rootless E2E covering unsigned-forgery denial, tool execution, approval/replay control, audit verification, channel isolation and broker-key denial.
 
-## Important remaining scope boundary
+## Install
 
-The development container cannot create a nested PID namespace and is not booted with systemd as PID 1, so live `systemctl enable/restart` was not rerun here. The normal installer path performs those operations and requires `catl host-audit` to pass afterward. A real target Linux host should run the final `--verify-installed` gate before production use.
+```bash
+git clone https://github.com/BryanFiFife/CATL.git
+cd CATL
+python3 tools/catlinstall.py --check --source-root .
 
-Windows/macOS protected runtimes, independent penetration testing, FIDO2 physical-presence proof, independent witness infrastructure and external-provider settlement are outside this Linux release-candidate scope.
+sudo python3 tools/catlinstall.py --install \
+  --source-root . \
+  --operator-user "$USER" \
+  --operator-public-key /path/to/operator-public.hex
+```
+
+See [`INSTALL_LINUX.md`](INSTALL_LINUX.md) for the complete deployment guide.
+
+## Security scope
+
+CATL protects tool paths that are actually routed through its broker. It does not magically constrain an agent that still has a direct shell, alternate plugin registry, unrestricted network credential or another unmediated route to the same capability.
+
+The protected release scope is currently Linux-focused. Windows/macOS protected runtimes, independent penetration testing, FIDO2 physical-presence assurance, independently operated witness infrastructure and provider-specific settlement verification remain outside the accepted rc2 scope.
 
 ## Licence
 
-The repository licence remains evaluation-only unless and until the copyright holder explicitly replaces it. Public availability does not itself grant redistribution, deployment or commercial-use rights.
+CATL is licensed under the **Apache License 2.0**. See [`../LICENSE`](../LICENSE) and [`../NOTICE`](../NOTICE).
+
+Apache-2.0 permits commercial use, modification and redistribution subject to its terms, including preservation of required notices and its patent provisions.

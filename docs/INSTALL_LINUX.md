@@ -1,6 +1,6 @@
 # CATL Linux installation
 
-> **Supported release scope:** Linux protected-broker deployment. CATL is still an evaluation release candidate, not an independently certified security product.
+> **Supported release scope:** open-source Linux protected-broker release candidate. CATL is developer-tested security software, not an independent security certification.
 
 The installer is `tools/catlinstall.py`. It verifies the release manifest before privileged changes, installs CATL into `/opt/catl/venv`, provisions dedicated service identities, preserves existing state/anchors, renders only the reviewed systemd templates, bootstraps fresh anchored state, and fails closed when host verification fails.
 
@@ -38,8 +38,6 @@ Keep the private key outside `/etc/catl`, the release archive, CI artifacts and 
 
 ## 3. Install
 
-Example:
-
 ```bash
 sudo python3 tools/catlinstall.py --install \
   --source-root . \
@@ -60,7 +58,7 @@ sudo python3 tools/catlinstall.py --install \
 
 The installer refuses automatic recovery when state exists without its independent anchor, or an anchor exists without corresponding state.
 
-## 4. Static/container acceptance
+## 4. Container/static smoke testing
 
 For a disposable container or a host where systemd is not PID 1:
 
@@ -72,7 +70,7 @@ sudo python3 tools/catlinstall.py --install \
   --no-systemd-activate
 ```
 
-This still installs and verifies the package, identities, filesystem permissions, policy, operator public key, anchor and rendered unit files, and runs `systemd-analyze verify`. It deliberately does not claim live service-manager acceptance.
+This still installs and verifies the package, identities, filesystem permissions, policy, operator public key, anchor and rendered unit files, and runs `systemd-analyze verify`. It does not claim a live service-manager activation test.
 
 ## 5. Verify an installed host
 
@@ -101,4 +99,8 @@ Installation is idempotent for an unchanged configuration. Existing policy, audi
 
 ## Security boundary
 
-Passing the installer and `host-audit` does not constitute independent penetration-test certification, hardware-backed human-presence proof, or universal protection against tool paths that bypass CATL. See [SECURITY.md](../SECURITY.md) and [DEPLOY_ROOTLESS_LINUX.md](DEPLOY_ROOTLESS_LINUX.md).
+Passing the installer and `host-audit` demonstrates CATL's deployment checks; it is not a third-party penetration-test certificate or a guarantee over tool paths that bypass CATL. See [SECURITY.md](../SECURITY.md) and [DEPLOY_ROOTLESS_LINUX.md](DEPLOY_ROOTLESS_LINUX.md).
+
+## Licence
+
+CATL is open source under the [Apache License 2.0](../LICENSE). Commercial use, modification and redistribution are permitted subject to the licence terms.

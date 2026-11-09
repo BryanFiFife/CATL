@@ -5,12 +5,41 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "caledapt-agent-trust"
 version = "0.11.0rc2"
-description = "Local-first MCP tool gateway with rootless Linux broker, protected operator IPC, signed rate-limit evidence and anchored receipts"
+description = "Open-source local-first security gateway for AI agents and MCP tools with default-deny policy, human approval, rootless Linux isolation and tamper-evident audit"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "Proprietary - evaluation only; see LICENSE"}
+license = {text = "Apache-2.0"}
 authors = [{name = "Caledapt"}]
+keywords = [
+  "ai-agent-security",
+  "agentic-ai",
+  "mcp",
+  "model-context-protocol",
+  "llm-security",
+  "human-in-the-loop",
+  "tool-permissions",
+  "ai-governance",
+  "zero-trust",
+  "audit"
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security"
+]
 dependencies = ["jsonschema==4.26.0", "cryptography==50.0.2"]
+
+[project.urls]
+Homepage = "https://caledapt.com"
+Repository = "https://github.com/BryanFiFife/CATL"
+Documentation = "https://github.com/BryanFiFife/CATL#readme"
+Issues = "https://github.com/BryanFiFife/CATL/issues"
+Security = "https://github.com/BryanFiFife/CATL/security/policy"
 
 [project.scripts]
 catl = "catl.cli:main"
