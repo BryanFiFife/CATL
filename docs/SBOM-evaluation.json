@@ -50,15 +50,15 @@
         "pkg:pypi/cryptography@50.0.2",
         "pkg:pypi/jsonschema@4.26.0"
       ],
-      "ref": "pkg:pypi/caledapt-agent-trust@0.11.0rc1"
+      "ref": "pkg:pypi/caledapt-agent-trust@0.11.0rc2"
     }
   ],
   "metadata": {
     "component": {
-      "bom-ref": "pkg:pypi/caledapt-agent-trust@0.11.0rc1",
+      "bom-ref": "pkg:pypi/caledapt-agent-trust@0.11.0rc2",
       "name": "caledapt-agent-trust",
       "type": "application",
-      "version": "0.11.0rc1"
+      "version": "0.11.0rc2"
     },
     "properties": [
       {
@@ -75,7 +75,7 @@
       }
     ]
   },
-  "serialNumber": "urn:uuid:fcb02031-247e-5172-ada4-80c151b6b653",
+  "serialNumber": "urn:uuid:74da097f-a0b3-5cde-91ee-f5a6d753e202",
   "specVersion": "1.6",
   "version": 1
 }
