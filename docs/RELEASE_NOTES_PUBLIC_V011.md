@@ -54,3 +54,25 @@ The current [`LICENSE`](../LICENSE) grants **private evaluation only**, and does
 This document records the **pre-documentation engineering baseline**, not a signed self-referential assertion of the eventual Git commit. GitHub source ZIPs generated from a branch are convenient downloads, but are not substitute signatures or independent provenance. Use CATL's release verification tooling, an independently reviewed source ref and independently pinned public key for any authenticated build.
 
 Security findings should be reported according to [`SECURITY.md`](../SECURITY.md), not as public exploit issues.
+
+## 9 November 2026 — mount and namespace audit correction
+
+A release-audit **false acceptance** was reproduced: an otherwise compliant
+systemd service could add an unreviewed writable bind mount or external
+network namespace and still pass the former `host-audit` property check.
+CATL now rejects seven such effective mount/namespace settings in its
+specific protected Linux service profiles, with tests through both the
+property helper and simulated `systemctl show` ingress.
+
+**Current-session scoped verification:** 40/40 isolated unittest cases and
+40/40 pytest cases (113 additional subtests), 10,000 fixed-seed hostile
+property mutations, source-exact six-component pinned audit inventory
+check and static `systemd-analyze verify` of the two review templates.
+These **do not replace** the earlier 707-discovery full native VM
+results at a different Git commit. The full current checkout was not
+rerun, and all six combined production security gates remain **open**.
+See [mount/namespace evidence](MOUNT_NAMESPACE_GUARD_2026-11-09.md).
+
+**Distribution:** evaluation candidate only. The `LICENSE` still permits
+private evaluation, not open-source redistribution or production deployment.
+A GitHub-generated source archive is distinct from a published GitHub Release.
