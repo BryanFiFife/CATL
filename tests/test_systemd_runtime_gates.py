@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 from catl.systemd_runtime_gates import (MEMORY_CEILINGS, STRICT_PROPERTIES,
+                                        NO_UNREVIEWED_MOUNTS_OR_NAMESPACES,
                                         assess_runtime_gates)
 
 
@@ -91,6 +92,34 @@ class SystemdRuntimeGates(unittest.TestCase):
                 bad = profile()
                 bad[key] = 'no' if STRICT_PROPERTIES[key] == 'yes' else ''
                 self.assertIn('runtime_' + key, self.rejected(bad))
+
+    def test_unreviewed_host_mounts_and_namespace_sharing_denied(self):
+        overrides = {
+            'BindPaths': '/tmp:/etc/catl',
+            'BindReadOnlyPaths': '/root:/mnt/root',
+            'NetworkNamespacePath': '/run/netns/external',
+            'JoinsNamespaceOf': 'untrusted.service',
+            'RootDirectory': '/tmp/other-root',
+            'RootImage': '/tmp/other-root.img',
+            'TemporaryFileSystem': '/etc',
+        }
+        self.assertEqual(set(overrides), set(NO_UNREVIEWED_MOUNTS_OR_NAMESPACES))
+        for key, value in overrides.items():
+            with self.subTest(property=key):
+                bad = profile()
+                bad[key] = value
+                self.assertIn('no_unreviewed_' + key, self.rejected(bad))
+
+    def test_unreviewed_properties_are_allowed_only_when_empty(self):
+        good = profile()
+        for name in NO_UNREVIEWED_MOUNTS_OR_NAMESPACES:
+            good[name] = ''
+        self.assertTrue(all(x['status'] == 'pass'
+                            for x in assess_runtime_gates(good, 'catl-broker')))
+        for key in NO_UNREVIEWED_MOUNTS_OR_NAMESPACES:
+            bad = dict(good)
+            bad[key] = object()
+            self.assertIn('no_unreviewed_' + key, self.rejected(bad))
 
     def test_malformed_numeric_input_fails_closed(self):
         for key in ('MemoryMax', 'MemorySwapMax', 'TasksMax', 'LimitCORE'):
