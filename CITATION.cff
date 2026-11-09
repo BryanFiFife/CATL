@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use CATL in research, security evaluation, tooling or documentation, please cite the project."
+title: "CATL: Caledapt Agent Trust Layer"
+type: software
+authors:
+  - family-names: "Caledapt"
+version: "0.11.0rc2"
+date-released: 2026-11-09
+license: Apache-2.0
+repository-code: "https://github.com/BryanFiFife/CATL"
+url: "https://github.com/BryanFiFife/CATL"
+abstract: "Open-source local-first security gateway for AI agents and Model Context Protocol tools with default-deny policy, human approval, rootless Linux isolation and tamper-evident audit."
+keywords:
+  - AI agent security
+  - Model Context Protocol
+  - MCP security
+  - LLM security
+  - human-in-the-loop
+  - agentic AI
+  - zero trust
