@@ -13,7 +13,7 @@
 ![Security review](https://img.shields.io/badge/security-internal%20testing%20only-F59E0B)
 ![Licence](https://img.shields.io/badge/licence-evaluation%20only-64748B)
 
-[**How it works**](#how-catl-works) · [**Try the demo**](#quick-start-local-evaluation) · [**Linux deployment**](docs/DEPLOY_ROOTLESS_LINUX.md) · [**Release notes**](docs/RELEASE_NOTES_PUBLIC_V011.md) · [**Security limits**](#security-boundaries-and-limitations)
+[**Download evaluation source**](docs/GITHUB_SOURCE_PACKAGE_2026-11-09.md) · [**How it works**](#how-catl-works) · [**Try the demo**](#quick-start-local-evaluation) · [**Linux deployment**](docs/DEPLOY_ROOTLESS_LINUX.md) · [**Release notes**](docs/RELEASE_NOTES_PUBLIC_V011.md) · [**Security limits**](#security-boundaries-and-limitations)
 
 Built by **[Caledapt](https://caledapt.com)** in Scotland — *Make AI useful. Not mysterious.*
 
