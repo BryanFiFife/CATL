@@ -3,6 +3,8 @@ import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from types import SimpleNamespace
+import stat
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from catl.host_audit import assess_unit, parse_show, run, REQUIRED
@@ -84,6 +86,42 @@ class UnitAudit(unittest.TestCase):
                           if part['status'] == 'fail'}
                 self.assertIn('no_unreviewed_' + key, failed)
         self.assertEqual(len(NO_UNREVIEWED_MOUNTS_OR_NAMESPACES), 7)
+
+    @unittest.skipUnless(sys.platform == 'linux', 'live systemd API is Linux-only')
+    def test_systemctl_show_ingress_rejects_unreviewed_mounts(self):
+        from catl.host_audit import run
+        backend = acceptable()
+        backend.update(User='catl-tools', Group='catl-tools',
+                       SupplementaryGroups='catl-backend-ipc',
+                       ReadWritePaths='/var/lib/catl-tools/work /run/catl-tools',
+                       MemoryMax=str(MEMORY_CEILINGS['catl-tools']))
+        def output(props):
+            return '\\n'.join(k + '=' + str(v) for k, v in props.items()) + '\\n'
+        trusted = SimpleNamespace(st_uid=0, st_mode=stat.S_IFREG | 0o755)
+        with patch('catl.host_audit.Path.stat', return_value=trusted):
+            for field,value in (
+                ('BindPaths', '/tmp:/etc/catl'),
+                ('NetworkNamespacePath', '/run/netns/untrusted'),
+                ('JoinsNamespaceOf', 'untrusted.service'),
+            ):
+                with self.subTest(field=field):
+                    broker = acceptable()
+                    broker[field] = value
+                    responses = [
+                        SimpleNamespace(returncode=0, stdout=output(broker)),
+                        SimpleNamespace(returncode=0, stdout=output(backend)),
+                    ]
+                    with patch('catl.host_audit.subprocess.run', side_effect=responses):
+                        result = run()
+                    self.assertFalse(result['passed'])
+                    self.assertFalse(result['units'][0]['passed'])
+                    self.assertTrue(result['units'][1]['passed'])
+            good_responses = [
+                SimpleNamespace(returncode=0, stdout=output(acceptable())),
+                SimpleNamespace(returncode=0, stdout=output(backend)),
+            ]
+            with patch('catl.host_audit.subprocess.run', side_effect=good_responses):
+                self.assertTrue(run()['passed'])
 
     def test_no_systemd_is_explicit_failure(self):
         with patch('catl.host_audit.subprocess.run',side_effect=FileNotFoundError('missing systemd')):
