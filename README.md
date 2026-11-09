@@ -13,16 +13,16 @@
 ![Security review](https://img.shields.io/badge/security-internal%20testing%20only-F59E0B)
 ![Licence](https://img.shields.io/badge/licence-evaluation%20only-64748B)
 
-[**Download evaluation source**](docs/GITHUB_SOURCE_PACKAGE_2026-11-09.md) · [**How it works**](#how-catl-works) · [**Try the demo**](#quick-start-local-evaluation) · [**Linux deployment**](docs/DEPLOY_ROOTLESS_LINUX.md) · [**Release notes**](docs/RELEASE_NOTES_PUBLIC_V011.md) · [**Security limits**](#security-boundaries-and-limitations)
+[**Download evaluation source**](docs/GITHUB_SOURCE_PACKAGE_2026-11-09.md) · [**Install on Linux**](docs/INSTALL_LINUX.md) · [**How it works**](#how-catl-works) · [**Try the demo**](#quick-start-local-evaluation) · [**Linux deployment**](docs/DEPLOY_ROOTLESS_LINUX.md) · [**rc2 notes**](docs/RELEASE_NOTES_PUBLIC_V011_RC2.md) · [**Security limits**](#security-boundaries-and-limitations)
 
 Built by **[Caledapt](https://caledapt.com)** in Scotland — *Make AI useful. Not mysterious.*
 
 </div>
 
 > [!IMPORTANT]
-> **Status: v0.11.0rc1 — Linux-focused evaluation release candidate; not production-certified.** The project has passed substantial internal Linux tests and a reported four-identity broker demonstration. It has **not** passed production-equivalent host isolation, independent penetration testing, physical FIDO2 authorisation, off-host witnessing, or real provider-side settlement verification. Windows and macOS protected runtimes are not supported. See [acceptance evidence](docs/CATL_ACCEPTANCE_RC_2026-11-08.md) and [open gates](docs/ROADMAP_STATUS_2026-11-07.md).
+> **Status: v0.11.0rc2 — Linux-focused evaluation release candidate; not independently production-certified.** The project has passed substantial internal Linux tests and a reported four-identity broker demonstration. It has **not** passed production-equivalent host isolation, independent penetration testing, physical FIDO2 authorisation, off-host witnessing, or real provider-side settlement verification. Windows and macOS protected runtimes are not supported. See [acceptance evidence](docs/CATL_ACCEPTANCE_RC_2026-11-08.md) and [open gates](docs/ROADMAP_STATUS_2026-11-07.md).
 
-> **9 November verification update:** 40 source-exact isolated regression cases (including 10,000 deterministic systemd-property negative mutations) passed; a real false-acceptance defect involving unreviewed bind mounts and network namespaces was reproduced and fixed. The pinned six-component evaluation SBOM matched its source, and sanitized service templates passed offline systemd verification. **The full current CATL native checkout was not rerun in this session.** None of the six combined production roadmap gates has been accepted. [Offline acceptance](docs/LOCAL_ACCEPTANCE_2026-11-09.md) · [Mount and namespace correction](docs/MOUNT_NAMESPACE_GUARD_2026-11-09.md).
+> **9 November rc2 installer update:** the Linux installer now verifies the release manifest before privileged changes, installs into `/opt/catl/venv`, provisions separated service identities and IPC groups, preserves state/anchors, renders the reviewed systemd templates, bootstraps fresh anchored state, and gates live activation on `catl host-audit`. The installer suite passed **31/31** standard-library tests plus a **1,000-case hostile-manifest sweep**. A disposable Linux install/verify/reinstall passed with static systemd validation; this development container cannot run systemd as PID 1, so a real target-host activation remains a required deployment check. [Installer guide](docs/INSTALL_LINUX.md) · [acceptance evidence](docs/INSTALLER_ACCEPTANCE_2026-11-09.md).
 
 ## Why CATL?
 
