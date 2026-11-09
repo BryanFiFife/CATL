@@ -66,20 +66,29 @@ class PublisherSafety(unittest.TestCase):
                 self.assertNotIn("--publish", argv)
                 return self.URL
             if argv[1] == "api":
-                return json.dumps({"object": {"type": "commit", "sha": self.COMMIT}})
+                return json.dumps({"tag_name": pub.TAG, "target_commitish": self.COMMIT,
+                                   "draft": True, "assets": [
+                                       {"name": "a.zip", "size": 3},
+                                       {"name": "sha.txt", "size": 4},
+                                   ]})
             self.fail(f"unexpected command {argv}")
-        with patch.object(pub, "checked", side_effect=fake_checked), patch.object(
-                pub, "verify_tag_absent", return_value=None):
-            url = pub.publish("gh", self.COMMIT, Path("/tmp/a.zip"),
-                              Path("/tmp/sha.txt"), Path("/tmp/notes.md"))
+        with tempfile.TemporaryDirectory() as tmp:
+            archive, checksum = Path(tmp) / "a.zip", Path(tmp) / "sha.txt"
+            archive.write_bytes(b"zip")
+            checksum.write_bytes(b"sums")
+            with patch.object(pub, "checked", side_effect=fake_checked), patch.object(
+                    pub, "verify_tag_absent", return_value=None):
+                url = pub.publish("gh", self.COMMIT, archive, checksum,
+                                  Path(tmp) / "notes.md")
         self.assertEqual(url, self.URL)
 
-    def test_publish_rejects_tag_to_wrong_commit(self):
+    def test_publish_rejects_draft_target_to_wrong_commit(self):
         calls = iter(["", pub.REPO, self.URL,
-                      json.dumps({"object": {"type": "commit", "sha": "b" * 40}})])
+                      json.dumps({"tag_name": pub.TAG, "target_commitish": "b" * 40,
+                                  "draft": True, "assets": []})])
         with patch.object(pub, "checked", side_effect=lambda *args, **kwargs: next(calls)), patch.object(
                 pub, "verify_tag_absent", return_value=None):
-            with self.assertRaisesRegex(pub.PublishError, "not at reviewed commit"):
+            with self.assertRaisesRegex(pub.PublishError, "unexpected tag, commit"):
                 pub.publish("gh", self.COMMIT, Path("/tmp/a.zip"),
                             Path("/tmp/sha.txt"), Path("/tmp/notes.md"))
 
