@@ -12,6 +12,7 @@ import re
 import stat
 from pathlib import Path
 from typing import Any
+from .systemd_runtime_gates import assess_runtime_gates
 
 REQUIRED = {
     'NoNewPrivileges': {'yes'},
@@ -85,6 +86,9 @@ def assess_unit(unit: str, properties: dict[str, str], expected_user: str) -> di
     # Systemd reports umasks in several equivalent octal notations.
     check('restricted_umask', properties.get('UMask', '') in ('0077', '077', '0o077'),
           '0077 umask required')
+    # Static service templates are insufficient: require finite cgroup and
+    # live isolation settings from the named, active systemd unit.
+    findings.extend(assess_runtime_gates(properties, expected_user))
     return {'unit': unit, 'user': user, 'passed': all(x['status'] == 'pass' for x in findings),
             'checks': findings, 'scope': 'systemd unit-properties preflight only'}
 
