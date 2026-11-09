@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a reproducible CATL defect
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a CATL problem. **Do not report a working security bypass here.** Use SECURITY.md for private vulnerability reporting.
+  - type: input
+    id: version
+    attributes:
+      label: CATL version / commit
+      placeholder: v0.11.0rc2 or commit SHA
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: Ubuntu 24.04, Python 3.13, etc.
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Deployment mode
+      options:
+        - Protected Linux broker
+        - Local unsandboxed demo
+        - Installer
+        - Hermes integration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Commands, inputs and the smallest safe reproducer.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Remove secrets, keys and personal/customer data.
+      render: shell
