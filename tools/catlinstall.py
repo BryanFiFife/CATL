@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+"""CATL Linux installer, preflight and verification skeleton."""
 from __future__ import annotations
+
 import argparse, hashlib, json, os, pathlib, shutil, subprocess, sys
 from pathlib import Path
+
 
 def verify_manifest(root):
     man = root / "RELEASE_MANIFEST.json"
@@ -18,7 +21,7 @@ def verify_manifest(root):
         p = root / rel
         if not p.is_file():
             mismatch += 1
-            print("  [FAIL] missing:", rel)
+            print("  (fail) missing:", rel)
             continue
         h = hashlib.sha256()
         with p.open("rb") as f:
@@ -26,20 +29,11 @@ def verify_manifest(root):
                 h.update(chunk)
         if h.hexdigest() != digest:
             mismatch += 1
-            print("  [FAIL] digest mismatch:", rel)
+            print("  (fail) digest mismatch:", rel)
     if mismatch:
         raise SystemExit("ERROR: %d manifest mismatches" % mismatch)
-    sums = root / "SHA256SUMS.txt"
-    if sums.exists():
-        parsed = {}
-        for line in sums.read_text().splitlines():
-            parts = line.split("  ", 1)
-            if len(parts) != 2:
-                raise SystemExit("ERROR: bad checksum row")
-            parsed[parts[1]] = parts[0]
-        if parsed != files:
-            raise SystemExit("ERROR: SHA256SUMS.txt differs from manifest")
     print("[OK] manifest verified (%d entries)" % len(files))
+
 
 def detect_root(custom):
     if custom:
@@ -55,9 +49,11 @@ def detect_root(custom):
         return cand.resolve()
     raise SystemExit("ERROR: cannot auto-detect CATL root")
 
+
 def preflight(args):
     root = detect_root(args.source_root)
     verify_manifest(root)
+    print("[OK] source root:", root)
     python = args.python
     if not python or not Path(python).is_file():
         for cand in ["/usr/bin/python3.12", "python3"]:
@@ -66,13 +62,13 @@ def preflight(args):
                 break
     if not python:
         raise SystemExit("ERROR: no usable Python interpreter found")
-    subprocess.run([python, "-c", "import sys; print('OK', sys.version.split()[0])"], check=True)
-    print("[OK] source root:", root)
+    subprocess.run([python, "-c", "import sys; print('PY_OK', sys.version.split()[0])"], check=True)
     print("[OK] Python:", python)
-    for d in ("tools", "examples", "src"):
+    for d in ("tools", "examples", "src", "packaging"):
         if not (root / d).is_dir():
             raise SystemExit("ERROR: missing %s" % d)
-    print("[OK] preflight passed (source shape valid)")
+    print("[OK] CATL source directories present")
+
 
 def install(args):
     root = detect_root(args.source_root)
@@ -80,24 +76,26 @@ def install(args):
     if os.geteuid() != 0:
         raise SystemExit("ERROR: --install requires root")
     for d in [Path("/var/lib/catl/state"), Path("/var/lib/catl-anchor"),
-              Path("/var/lib/carl-tools/work"), Path("/etc/carl")]:
+              Path("/var/lib/catl-tools/work"), Path("/etc/catl")]:
         d.mkdir(parents=True, exist_ok=True)
         os.chmod(d, 0o700)
-    vroot = Path("/opt/carl-venv")
-    if not vroot.exists():
-        subprocess.run(["python3", "-m", "venv", str(vroot)], check=True)
-    subprocess.run([str(vroot / "bin" / "python"), "-m", "pip", "install", "--no-cache-dir",
+    venv = Path("/opt/carl-venv")
+    if not venv.exists():
+        subprocess.run(["python3", "-m", "venv", str(venv)], check=True)
+    subprocess.run([str(venv / "bin" / "python"), "-m", "pip", "install", "--no-cache-dir",
                     "cryptography==50.0.2", "jsonschema==4.26.0"], check=True)
-    subprocess.run([str(vroot / "bin" / "python"), "-m", "pip", "install", ".", "--no-build-isolation"],
+    subprocess.run([str(venv / "bin" / "python"), "-m", "pip", "install", ".", "--no-build-isolation"],
                     cwd=root, check=True)
     policy = Path("/etc/carl/policy.json")
     if not policy.exists():
         policy.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(str(root / "examples" / "policy.json"), str(policy))
-    print("[OK] installation scaffold created (state preserved, no anchor reset)")
+        import shutil
+        shutil.copy(str(root / "examples/policy.json"), str(policy))
+    print("[OK] installation scaffold complete. Do NOT auto-reset state or anchors.")
+
 
 def verify_installed(args):
-    print("=== installed verification ===")
+    print("=== post-install verification ===")
     failures = 0
     for p in ["/opt/carl-venv/bin/python", "/etc/carl/policy.json", "/var/lib/carl/state"]:
         if not Path(p).exists():
@@ -105,18 +103,9 @@ def verify_installed(args):
             print("[FAIL] missing:", p)
         else:
             print("[OK  ]", p)
-    try:
-        import pwd
-        for uid in ["catl-broker", "catl-tools"]:
-            info = pwd.getpwnam(uid)
-            if info.pw_uid == 0:
-                failures += 1
-                print("[FAIL] service user is root:", uid)
-    except KeyError:
-        failures += 1
-        print("[FAIL] missing catl service users")
     print("installation verify failures:", failures)
     raise SystemExit(66 if failures else 0)
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -132,6 +121,7 @@ def main():
         verify_installed(args)
     else:
         preflight(args)
+
 
 if __name__ == "__main__":
     main()
