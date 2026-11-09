@@ -296,6 +296,8 @@ No by design. CATL's trust decisions and audit state are local-first. The tools 
 
 Issues, reproducible bug reports, documentation improvements and security-minded contributions are welcome.
 
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the development workflow, **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** for community expectations, **[CHANGELOG.md](CHANGELOG.md)** for public release history and **[CITATION.cff](CITATION.cff)** for citation metadata.
+
 - Use **GitHub Issues** for normal bugs and feature proposals.
 - Use **[SECURITY.md](SECURITY.md)** for vulnerabilities; do not publish a working exploit against live deployments as a normal issue.
 - Include a reproducer and tests for security-boundary changes wherever possible.
