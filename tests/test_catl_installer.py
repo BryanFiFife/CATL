@@ -1,10 +1,11 @@
 """Offline checks for the Linux installer scaffold."""
 from __future__ import annotations
-import subprocess, sys
+import hashlib, json, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = ROOT / "tools" / "catlinstall.py"
+MANIFEST = ROOT / "RELEASE_MANIFEST.json"
 
 
 def test_installer_exists():
@@ -33,16 +34,13 @@ def test_preflight_rejects_bad_source():
 
 
 def test_manifest_integrity():
-    import json, hashlib
-    root = ROOT
-    man = root / "RELEASE_MANIFEST.json"
-    data = json.loads(man.read_text())
+    data = json.loads(MANIFEST.read_text())
     assert data.get("algorithm") == "sha256"
     files = data.get("files", {})
     assert isinstance(files, dict) and files
     for rel, digest in files.items():
-        p = root / rel
-        assert p.is_file(), "missing tracked file: %s" % rel
+        p = ROOT / rel
+        assert p.is_file()
         h = hashlib.sha256()
         with p.open("rb") as f:
             for chunk in iter(lambda: f.read(65536), b""):
