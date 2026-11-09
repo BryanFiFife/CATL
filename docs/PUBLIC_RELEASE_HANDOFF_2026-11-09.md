@@ -49,3 +49,42 @@ Do not credit the final source tree with old tests. Re-run full native Linux tes
 Hardened production systemd/LSM/cgroup/firewall egress; real installed Hermes tool bypass; Windows/macOS protected runtimes; physical FIDO2; independently administered off-host audit witness and external pen-test; real provider-specific authoritative effect reconciliation; complete MCP SDK/transport conformance; complete SBOM and independent vulnerability/licence assessment; independently reviewed signed provenance.
 
 Free availability is not proof of production readiness.
+
+## One-command owner-controlled draft Release creation
+
+A local publisher is now included at `tools/publish_github_release.py`.
+It intentionally requires Linux/WSL, Xvfb, Python dependencies, a reviewed exact
+commit, and the GitHub CLI authenticated to the repository. It does not run any
+GitHub Actions, push branches, create a production certification, sign with a
+hidden key, or change the repository's visibility.
+
+From an Ubuntu/WSL clone with Python dependencies installed and the `gh`
+CLI authenticated (`gh auth login`), switch to the reviewed release-preparation
+branch and obtain its **current** immutable commit:
+
+```bash
+git fetch origin release/v0.11.0rc1-prep-20261109
+git switch --detach origin/release/v0.11.0rc1-prep-20261109
+COMMIT="$(git rev-parse HEAD)"
+python3 tools/publish_github_release.py \
+  --expected-commit "$COMMIT" \
+  --output-dir "$HOME/catl-release-v0.11" \
+  --create-draft \
+  --ack-evaluation-license
+```
+
+The command first checks the SBOM, runs native Linux tests under Xvfb,
+performs the static security sanity check and Python compilation, generates
+and re-verifies the exact Git-source ZIP, and creates a SHA-256 file and
+versioned release notes. Only after those steps pass does it use authenticated
+`gh release create` to create a **draft pre-release** with two assets.
+
+GitHub draft releases can exist without creating the corresponding Git tag.
+The script verifies the resulting GitHub draft metadata and asset sizes,
+not an imaginary draft tag. Before publishing, independently verify the
+downloaded ZIP SHA-256. When published, verify the immutable tag points to the
+reviewed commit. A draft is not a published Release.
+
+**Do not publish the draft automatically.** Release readiness and the licence
+choice remain owner decisions. A free evaluation download is not an
+open-source licence. The six combined product-security gates are still open.
