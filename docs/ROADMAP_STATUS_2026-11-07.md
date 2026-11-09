@@ -114,3 +114,24 @@ locally. **No real systemd service was installed or tested during this edit,
 and the complete CATL native suite was not rerun.** This improves an
 acceptance prerequisite; **the combined Linux host-hardening milestone remains
 OPEN**. See [live systemd gate evidence](LIVE_SYSTEMD_GATES_2026-11-09.md).
+
+
+## 9 November 2026 — independently rerun offline tests and downloadable snapshot
+
+On an isolated Linux Python 3.13.5 runtime, exact Git-blob-matched
+source copies passed **36/36 focused unit tests**: 12 systemd gate,
+8 integrated host-audit, 6 evaluation SBOM and 9 release-publisher
+tests, plus one 10,000-case deterministic fail-closed property-mutation
+test. The two source-exact systemd templates passed
+`systemd-analyze verify` after substitutions in temporary copies;
+offline exposure scoring reported 1.6 per template with systemd 257.
+The source-exact six-component pinned evaluation SBOM check passed.
+
+This does **not** supersede the historical 8 November full-native
+acceptance, nor constitute a new current full-suite run or live
+production-host security acceptance. All six combined production
+roadmap boxes remain **unchecked**. The evaluation source is available
+as a GitHub-generated full-repository ZIP at the fixed
+`release/v0.11.0rc1-evaluation-20261109` branch, but there is
+**no GitHub Release object**. See [scoped evidence](LOCAL_ACCEPTANCE_2026-11-09.md)
+and [archive details](GITHUB_SOURCE_PACKAGE_2026-11-09.md).
