@@ -92,8 +92,8 @@ def prepare(expected: str, output_dir: Path, *, run_tests: bool = True) -> tuple
     notes = output_dir / f"CATL-{VERSION}-RELEASE-NOTES.md"
     base = (ROOT / "docs" / "RELEASE_NOTES_PUBLIC_V011.md").read_text(encoding="utf-8")
     notes.write_text(base + f"\n## Exact release artifact\n\n"
-                     f"- Source commit: \`{expected}\`\n"
-                     f"- SHA-256: \`{digest}\`\n"
+                     f"- Source commit: `{expected}`\n"
+                     f"- SHA-256: `{digest}`\n"
                      "- Artifact is an **unsigned** source ZIP unless a separate "
                      "verified detached attestation is attached.\n"
                      "- The current LICENSE permits **private evaluation only**; "
