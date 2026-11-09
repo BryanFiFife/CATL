@@ -1,26 +1,81 @@
-# 🔒 CATL v0.7.0rc1 — security and disclosure
+# 🔒 CATL security policy
 
-**Private evaluation. Not production certified and not guaranteed free of backdoors.** CATL does not eliminate the need for OS isolation, trusted update provenance, independent audit or a separately verified approval channel.
+**Current public release candidate: v0.11.0rc2**
 
-- **Use the rootless Linux broker** (`catl broker --backend-socket`, `catl backend-service`, `catl shim`, `catl overlay --operator-socket`) for isolation experiments. Distinct agent, operator, backend and broker OS identities are required. The existing `catl run --allow-unsandboxed` and `overlay --unsafe-direct-state` modes are demonstrations only.
-- **Fail-closed database:** empty state starts disarmed. Anchored mode refuses removed or stale checkpoints and replayed control/approval rows. Do not auto-reinitialise or silently reset the anchor.
-- **External checks required:** broker code and dependencies must be administrator-owned/read-only to the agent; restrict network and filesystem rights of every process; isolate the backend's credentials; avoid unreviewed installers and arbitrary tool servers.
-- **Human identity:** the protected operator socket pins a Linux UID, but cannot independently distinguish a legitimate human from malware running as that user.
-- **No remote updater/telemetry:** this project does not add a listening TCP API, automatic updater or mandatory external account.
-- **Report vulnerabilities privately** through Caledapt's established contact channel. Do not post exploit details, credentials or customer data in public issues.
+CATL is open source under the Apache License 2.0 and is designed as a defensive trust layer for AI-agent and MCP tool execution. It is developer-tested security software, not an independent security certification.
 
-Read [v0.5 audit](docs/SECURITY_AUDIT_V05.md), [rootless Linux deployment](docs/DEPLOY_ROOTLESS_LINUX.md) and [architecture](docs/ARCHITECTURE.md).
+## Supported security scope
 
-## Current release evidence
+The protected runtime currently supported by the release candidate is Linux. The intended deployment separates broker, agent, human operator and tool-backend authority across distinct identities and authenticated Unix-socket channels.
 
-The local engineering review is at [docs/SECURITY_AUDIT_V07.md](docs/SECURITY_AUDIT_V07.md), with explicit unresolved production gates in [docs/RELEASE_GATES_V07.md](docs/RELEASE_GATES_V07.md). No unaudited network service, key access from the agent, or automated trust recovery is included in the protected Linux broker.
+Use the protected broker path for consequential testing:
 
+- `catl broker`
+- `catl backend-service`
+- `catl shim`
+- `catl overlay --operator-socket ...`
 
-## 🧨 v0.10 internal red-team findings
+The deliberately unsafe demonstration paths, including `catl run --allow-unsandboxed` and `overlay --unsafe-direct-state`, are for disposable evaluation only.
 
-See [`docs/RED_TEAM_ASSESSMENT_V010.md`](docs/RED_TEAM_ASSESSMENT_V010.md) for reproducible Linux agent-socket exhaustion and backend message-flood findings, mitigation tests, and known remaining attack surfaces. This report was produced by the development assistant, **not by an independent penetration tester**. Production/GA remains blocked on live host confinement, external security review, external-effect reconciliation and independent audit witnessing.
+## Security principles
 
+- **Default deny:** unknown or unauthorised tool actions do not silently pass.
+- **No silent trust reset:** anchored state must not be automatically reinitialised after integrity failure.
+- **Separated authority:** broker policy/signing state must not be writable by the untrusted agent.
+- **Exact approvals:** operator approvals are action-bound and replay-resistant.
+- **No blind retry of uncertain effects:** externally ambiguous operations are quarantined for reconciliation.
+- **Host controls still matter:** CATL cannot protect a capability the agent can reach through an unmediated shell, plugin, credential, network route or alternate tool registry.
+- **No mandatory cloud control plane:** CATL does not require a listening public TCP API, automatic updater or external account for local trust decisions.
 
-## 🔐 v0.11 signed operator decisions
+## Reporting a vulnerability
 
-A protected Linux broker now requires a separately provisioned **public verification key**. The operator CLI and overlay can use an evaluation-only software private key to sign one-use command-bound challenges. UID-only operator controls require the explicit **unsafe** `--allow-uid-only-operator` override. Do not ship an operator private key in any archive, CI artifact or repository. See [operator signing setup](docs/OPERATOR_SIGNING_V011.md) and [the v0.11 internal race/forgery assessment](docs/RED_TEAM_ASSESSMENT_V011.md). Software signatures do not constitute hardware-verified presence. Real host isolation, external pen testing and hardware-backed approval remain GA blockers.
+Please **do not open a public issue containing exploit details, secrets, customer data or a working bypass**.
+
+Preferred route: use GitHub's private security-advisory reporting flow for this repository:
+
+https://github.com/BryanFiFife/CATL/security/advisories/new
+
+If private advisory reporting is unavailable, contact Caledapt through its established business contact channel and clearly mark the message **CATL SECURITY**.
+
+A useful report includes:
+
+1. affected CATL version/commit;
+2. platform and deployment mode;
+3. minimal reproducer;
+4. expected vs actual trust-boundary behaviour;
+5. impact and realistic attacker prerequisites;
+6. any proposed mitigation.
+
+## Current evidence
+
+For v0.11.0rc2, public evidence includes:
+
+- 31/31 installer regression tests;
+- 1,000/1,000 hostile-manifest cases rejected;
+- disposable Linux install → verify → reinstall smoke testing;
+- static `systemd-analyze verify` checks on rendered broker/backend units;
+- offline systemd security analysis scoring 1.3 / OK for both reviewed service profiles;
+- the prior core baseline recording 278 passing Linux regressions;
+- a four-identity signed rootless E2E covering forgery denial, tool execution, approval/replay control, audit verification, channel isolation and broker-key denial.
+
+See:
+
+- [rc2 release notes](docs/RELEASE_NOTES_PUBLIC_V011_RC2.md)
+- [installer acceptance](docs/INSTALLER_ACCEPTANCE_2026-11-09.md)
+- [threat model](docs/THREAT_MODEL.md)
+- [rootless Linux deployment](docs/DEPLOY_ROOTLESS_LINUX.md)
+- [v0.11 red-team assessment](docs/RED_TEAM_ASSESSMENT_V011.md)
+- [release attestations](docs/RELEASE_ATTESTATIONS.md)
+
+## Known boundaries
+
+CATL does not claim:
+
+- protected Windows AppContainer or macOS sandbox operation end-to-end;
+- completed hardware-backed FIDO2/WebAuthn presence assurance;
+- independent penetration-test certification;
+- an independently administered off-host witness;
+- proof that an external provider actually settled an email/API/payment effect merely because a tool returned success;
+- protection against a compromised host administrator/kernel or stolen operator authority.
+
+Security changes should include a reproducer and regression test wherever practical.

@@ -9,12 +9,13 @@
 **Default-deny tool policy · Human approval · Rootless Linux isolation · Signed operator controls · Tamper-evident audit**
 
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/badge/release-v0.11.0rc2-F59E0B.svg)](https://github.com/BryanFiFife/CATL/tree/release/v0.11.0-rc2)
 ![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![Linux RC](https://img.shields.io/badge/protected%20runtime-Linux-1769AA?logo=linux&logoColor=white)
 ![MCP Security](https://img.shields.io/badge/MCP-security%20gateway-7952B3)
 ![GitHub stars](https://img.shields.io/github/stars/BryanFiFife/CATL?style=flat&logo=github)
 
-[**Install CATL**](docs/INSTALL_LINUX.md) · [**How it works**](#how-catl-works) · [**Security model**](#security-boundaries) · [**rc2 notes**](docs/RELEASE_NOTES_PUBLIC_V011_RC2.md) · [**Report a vulnerability**](SECURITY.md)
+[**Latest rc2 source**](https://github.com/BryanFiFife/CATL/tree/release/v0.11.0-rc2) · [**Install CATL**](docs/INSTALL_LINUX.md) · [**How it works**](#how-catl-works) · [**Security model**](#security-boundaries) · [**rc2 notes**](docs/RELEASE_NOTES_PUBLIC_V011_RC2.md) · [**Report a vulnerability**](SECURITY.md)
 
 Built by **[Caledapt](https://caledapt.com)** in Scotland · *Make AI useful. Not mysterious.*
 
@@ -294,6 +295,8 @@ No by design. CATL's trust decisions and audit state are local-first. The tools 
 ## Contributing
 
 Issues, reproducible bug reports, documentation improvements and security-minded contributions are welcome.
+
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the development workflow, **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** for community expectations, **[CHANGELOG.md](CHANGELOG.md)** for public release history and **[CITATION.cff](CITATION.cff)** for citation metadata.
 
 - Use **GitHub Issues** for normal bugs and feature proposals.
 - Use **[SECURITY.md](SECURITY.md)** for vulnerabilities; do not publish a working exploit against live deployments as a normal issue.
