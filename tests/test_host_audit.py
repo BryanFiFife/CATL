@@ -6,6 +6,7 @@ from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from catl.host_audit import assess_unit, parse_show, run, REQUIRED
+from catl.systemd_runtime_gates import MEMORY_CEILINGS, STRICT_PROPERTIES
 
 
 def acceptable():
@@ -14,7 +15,9 @@ def acceptable():
        'SupplementaryGroups':'catl-agent-ipc catl-operator-ipc catl-backend-ipc', 'LoadState':'loaded', 'ActiveState':'active',
        'RestrictAddressFamilies':'AF_UNIX', 'IPAddressDeny':'any',
        'CapabilityBoundingSet':'', 'AmbientCapabilities':'',
-       'ReadWritePaths':'/var/lib/catl/state /var/lib/catl-anchor /run/catl-agent /run/catl-operator', 'UMask':'0077'}
+       'ReadWritePaths':'/var/lib/catl/state /var/lib/catl-anchor /run/catl-agent /run/catl-operator', 'UMask':'0077',
+       'MemoryMax':str(MEMORY_CEILINGS['catl-broker']), 'MemorySwapMax':'0',
+       'TasksMax':'64', 'LimitCORE':'0', 'IPAddressAllow':'', **STRICT_PROPERTIES}
 
 class UnitAudit(unittest.TestCase):
     def test_restricted_profile_passes(self):
@@ -49,6 +52,17 @@ class UnitAudit(unittest.TestCase):
         self.assertTrue(assess_unit('catl-backend.service',props,'catl-tools')['passed'])
         props['ReadWritePaths'] += ' /run/catl-agent'
         self.assertFalse(assess_unit('catl-backend.service',props,'catl-tools')['passed'])
+
+    def test_live_cgroup_and_egress_weakening_fails_audit(self):
+        original = acceptable()
+        for name,value in (('MemoryMax','infinity'), ('MemorySwapMax','1048576'),
+                           ('TasksMax','infinity'), ('LimitCORE','infinity'),
+                           ('IPAddressAllow','192.0.2.0/24'),
+                           ('ProtectProc','default'), ('KeyringMode','shared')):
+            with self.subTest(name=name):
+                props = dict(original)
+                props[name] = value
+                self.assertFalse(assess_unit('catl-broker.service',props,'catl-broker')['passed'])
 
     def test_no_systemd_is_explicit_failure(self):
         with patch('catl.host_audit.subprocess.run',side_effect=FileNotFoundError('missing systemd')):
