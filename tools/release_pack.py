@@ -210,7 +210,7 @@ def release_files(*, expected_commit: str | None = None):
 
 def manifest(entries):
     return {'name': 'caledapt-agent-trust', 'version': VERSION,
-            'release_type': 'private-linux-hardening-release-candidate',
+            'release_type': 'open-source-linux-release-candidate',
             'algorithm': 'sha256', 'signed': False,
             'files': {name: hashlib.sha256(data).hexdigest() for name, data, _mode in entries}}
 
@@ -476,7 +476,7 @@ def verify(path: Path):
                 or m.get('version') != VERSION or m.get('signed') is not False
                 or not isinstance(m.get('source_commit'), str)
                 or not re.fullmatch(r'(?:[0-9a-f]{40}|[0-9a-f]{64})', m['source_commit'])
-                or m.get('release_type') != 'private-linux-hardening-release-candidate'
+                or m.get('release_type') != 'open-source-linux-release-candidate'
                 or not isinstance(m.get('files'), dict)):
             raise ValueError('release_manifest_schema_invalid')
         files = m['files']
