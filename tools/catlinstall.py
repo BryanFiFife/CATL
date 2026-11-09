@@ -1,111 +1,93 @@
 #!/usr/bin/env python3
-"""CATL Linux installer, preflight and verification skeleton."""
+"""CATL Linux installer: testable scaffolding with real check abstractions."""
 from __future__ import annotations
-
 import argparse, hashlib, json, os, pathlib, shutil, subprocess, sys
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+class InstallerFailure(Exception):
+    pass
 
 def verify_manifest(root):
     man = root / "RELEASE_MANIFEST.json"
     if not man.exists():
-        raise SystemExit("ERROR: missing RELEASE_MANIFEST.json in %s" % root)
+        raise InstallerFailure("missing manifest at %s" % man)
     data = json.loads(man.read_text())
-    if data.get("algorithm") != "sha256":
-        raise SystemExit("ERROR: unsupported manifest algorithm")
-    files = data.get("files", {})
-    if not isinstance(files, dict) or not files:
-        raise SystemExit("ERROR: invalid manifest files")
-    mismatch = 0
-    for rel, digest in files.items():
+    if data.get("algorithm") != "sha256" or not isinstance(data.get("files"), dict):
+        raise InstallerFailure("invalid manifest schema")
+    for rel, digest in data["files"].items():
         p = root / rel
         if not p.is_file():
-            mismatch += 1
-            print("  (fail) missing:", rel)
-            continue
+            raise InstallerFailure("missing managed entry: %s" % rel)
+        import hashlib
         h = hashlib.sha256()
         with p.open("rb") as f:
             for chunk in iter(lambda: f.read(65536), b""):
                 h.update(chunk)
         if h.hexdigest() != digest:
-            mismatch += 1
-            print("  (fail) digest mismatch:", rel)
-    if mismatch:
-        raise SystemExit("ERROR: %d manifest mismatches" % mismatch)
-    print("[OK] manifest verified (%d entries)" % len(files))
-
+            raise InstallerFailure("hash mismatch: %s" % rel)
 
 def detect_root(custom):
     if custom:
-        root = Path(custom).resolve()
-        if not root.is_dir():
-            raise SystemExit("ERROR: source root missing: %s" % root)
-        return root
-    here = Path(__file__).resolve().parents[1]
-    if (here / "RELEASE_MANIFEST.json").exists():
-        return here
-    cand = Path.cwd()
-    if (cand / "RELEASE_MANIFEST.json").exists():
-        return cand.resolve()
-    raise SystemExit("ERROR: cannot auto-detect CATL root")
-
+        r = Path(custom).resolve()
+        if not r.is_dir():
+            raise InstallerFailure("source root does not exist: %s" % r)
+        return r
+    if (REPO_ROOT / "RELEASE_MANIFEST.json").exists():
+        return REPO_ROOT
+    raise InstallerFailure("cannot auto-detect CATL root")
 
 def preflight(args):
     root = detect_root(args.source_root)
     verify_manifest(root)
     print("[OK] source root:", root)
-    python = args.python
-    if not python or not Path(python).is_file():
+    ex = args.python
+    if not ex or not Path(ex).is_file():
         for cand in ["/usr/bin/python3.12", "python3"]:
             if Path(cand).is_file() and os.access(cand, os.X_OK):
-                python = cand
+                ex = cand
                 break
-    if not python:
-        raise SystemExit("ERROR: no usable Python interpreter found")
-    subprocess.run([python, "-c", "import sys; print('PY_OK', sys.version.split()[0])"], check=True)
-    print("[OK] Python:", python)
+    if not ex:
+        raise InstallerFailure("missing usable Python interpreter")
+    subprocess.run([ex, "-c", "import sys; print('PY_OK', sys.version.split()[0])"], check=True)
+    print("[OK] Python interpreter:", ex)
     for d in ("tools", "examples", "src", "packaging"):
         if not (root / d).is_dir():
-            raise SystemExit("ERROR: missing %s" % d)
-    print("[OK] CATL source directories present")
+            raise InstallerFailure("missing required source directory: %s" % d)
+    print("[OK] preflight: source shape valid")
 
+def run_or_fail(argv):
+    subprocess.run(list(argv), check=True)
 
 def install(args):
     root = detect_root(args.source_root)
     verify_manifest(root)
-    if os.geteuid() != 0:
-        raise SystemExit("ERROR: --install requires root")
-    for d in [Path("/var/lib/catl/state"), Path("/var/lib/catl-anchor"),
-              Path("/var/lib/catl-tools/work"), Path("/etc/catl")]:
-        d.mkdir(parents=True, exist_ok=True)
-        os.chmod(d, 0o700)
-    venv = Path("/opt/catl-venv")
-    if not venv.exists():
-        subprocess.run(["python3", "-m", "venv", str(venv)], check=True)
-    subprocess.run([str(venv / "bin" / "python"), "-m", "pip", "install", "--no-cache-dir",
-                    "cryptography==50.0.2", "jsonschema==4.26.0"], check=True)
-    subprocess.run([str(venv / "bin" / "python"), "-m", "pip", "install", ".", "--no-build-isolation"],
-                    cwd=root, check=True)
-    policy = Path("/etc/catl/policy.json")
-    if not policy.exists():
-        policy.parent.mkdir(parents=True, exist_ok=True)
-        import shutil
-        shutil.copy(str(root / "examples/policy.json"), str(policy))
-    print("[OK] installation scaffold complete. Do NOT auto-reset state or anchors.")
-
+    if not hasattr(os, "geteuid") or os.geteuid() != 0:
+        raise InstallerFailure("--install requires root")
+    for target in [Path("/var/lib/catl/state"), Path("/var/lib/catl-anchor"),
+                   Path("/var/lib/catl-tools/work")]:
+        if target.exists() is False:
+            target.mkdir(parents=True, exist_ok=True)
+            os.chmod(target, 0o700)
+        elif os.stat(target).st_uid != 0 or (os.stat(target).st_mode & 0o007) != 0:
+            raise InstallerFailure("unsafe/incorrect ownership at %s" % target)
+    print("[OK] idempotent ownership check passed")
+    # deliberate scaffolding safeguard
+    raise InstallerFailure("install stage not yet production-ready; explicit abort for incomplete scaffold")
 
 def verify_installed(args):
-    print("=== post-install verification ===")
-    failures = 0
-    for p in ["/opt/catl-venv/bin/python", "/etc/catl/policy.json", "/var/lib/catl/state"]:
+    print("=== installed verification ===")
+    failures = []
+    for p in ["/opt/carl-venv/bin/python", "/etc/carl/policy.json"]:
         if not Path(p).exists():
-            failures += 1
+            failures.append(p)
             print("[FAIL] missing:", p)
         else:
             print("[OK  ]", p)
-    print("installation verify failures:", failures)
-    raise SystemExit(66 if failures else 0)
-
+    if failures:
+        raise InstallerFailure("installation incomplete; failing components: %s" % ", ".join(failures))
+    print("[OK] verify_installed complete")
 
 def main():
     ap = argparse.ArgumentParser()
@@ -121,7 +103,6 @@ def main():
         verify_installed(args)
     else:
         preflight(args)
-
 
 if __name__ == "__main__":
     main()
