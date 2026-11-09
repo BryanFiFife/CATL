@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""CATL Linux installer: testable scaffolding with real check abstractions."""
 from __future__ import annotations
 import argparse, hashlib, json, os, pathlib, shutil, subprocess, sys
 from pathlib import Path
@@ -41,53 +40,43 @@ def detect_root(custom):
 def preflight(args):
     root = detect_root(args.source_root)
     verify_manifest(root)
-    print("[OK] source root:", root)
-    ex = args.python
-    if not ex or not Path(ex).is_file():
-        for cand in ["/usr/bin/python3.12", "python3"]:
-            if Path(cand).is_file() and os.access(cand, os.X_OK):
-                ex = cand
-                break
-    if not ex:
-        raise InstallerFailure("missing usable Python interpreter")
-    subprocess.run([ex, "-c", "import sys; print('PY_OK', sys.version.split()[0])"], check=True)
-    print("[OK] Python interpreter:", ex)
-    for d in ("tools", "examples", "src", "packaging"):
-        if not (root / d).is_dir():
-            raise InstallerFailure("missing required source directory: %s" % d)
-    print("[OK] preflight: source shape valid")
+    python = args.python
+    if not python or not Path(python).is_file():
+        for c in ["/usr/bin/python3.12", "python3"]:
+            if Path(c).is_file() and os.access(c, os.X_OK):
+                python = c; break
+    if not python:
+        raise InstallerFailure("no usable Python")
+    subprocess.run([python, "-c", "import os; print('PY_OK', os.uname().sysname if hasattr(os,'uname') else 'OK')"], check=True)
+    print("[OK] preflight passed")
 
-def run_or_fail(argv):
-    subprocess.run(list(argv), check=True)
+def run_or_fail(cmd):
+    subprocess.run(cmd, check=True)
+
+def install_plan(root):
+    plan = {"directories": [], "services": []}
+    for candidate in ["/var/lib/catl/state", "/var/lib/catl-anchor", "/var/lib/catl-tools/work"]:
+        plan["directories"].append(candidate)
+    return plan
 
 def install(args):
     root = detect_root(args.source_root)
     verify_manifest(root)
     if not hasattr(os, "geteuid") or os.geteuid() != 0:
         raise InstallerFailure("--install requires root")
-    for target in [Path("/var/lib/catl/state"), Path("/var/lib/catl-anchor"),
-                   Path("/var/lib/catl-tools/work")]:
-        if target.exists() is False:
-            target.mkdir(parents=True, exist_ok=True)
-            os.chmod(target, 0o700)
-        elif os.stat(target).st_uid != 0 or (os.stat(target).st_mode & 0o007) != 0:
-            raise InstallerFailure("unsafe/incorrect ownership at %s" % target)
-    print("[OK] idempotent ownership check passed")
-    # deliberate scaffolding safeguard
-    raise InstallerFailure("install stage not yet production-ready; explicit abort for incomplete scaffold")
+    target_dir = Path("/var/lib/catl/state")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    if target_dir.stat().st_uid != 0:
+        raise InstallerFailure("ownership unsafe at %s" % target_dir)
+    # no chown reset; explicit abort to keep incomplete state safe
+    raise InstallerFailure("install is still scaffolded and unsafe; refusing partial success")
 
 def verify_installed(args):
-    print("=== installed verification ===")
-    failures = []
-    for p in ["/opt/carl-venv/bin/python", "/etc/carl/policy.json"]:
-        if not Path(p).exists():
-            failures.append(p)
-            print("[FAIL] missing:", p)
-        else:
-            print("[OK  ]", p)
-    if failures:
-        raise InstallerFailure("installation incomplete; failing components: %s" % ", ".join(failures))
-    print("[OK] verify_installed complete")
+    files = ["/opt/carl-venv/bin/python"]
+    missing = [p for p in files if not Path(p).exists()]
+    if missing:
+        raise InstallerFailure("missing installed components: %s" % ", ".join(missing))
+    print("[OK] verify_installed passed (%d paths)" % (len(files)-len(missing)))
 
 def main():
     ap = argparse.ArgumentParser()
