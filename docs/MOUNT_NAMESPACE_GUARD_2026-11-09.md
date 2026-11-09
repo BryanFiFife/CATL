@@ -28,15 +28,17 @@ CATL broker/backend service profiles. An alternative profile may permit
 individual mounts only after explicit policy review and a separate test suite.
 
 New tests prove both the direct property checker and the integrated
-`catl.host_audit.assess_unit` refusal. The existing 10,000 fixed-seed
+`catl.host_audit.assess_unit` refusal. An additional Linux-only regression
+injects malicious properties through simulated `systemctl show` outputs,
+validating `run()`, `parse_show()` and the complete audit decision path. The existing 10,000 fixed-seed
 hostile-property mutation regression was expanded to include all seven
 new keys; malformed values fail closed.
 
 ## Local independent evidence
 
 - `PYTHONPATH=src python -m unittest discover -s tests -p test_*.py`:
-  **39 passed**, 0 failed, against isolated source-exact files.
-- `PYTHONPATH=src python -m pytest tests -q`: **39 passed**, 110
+  **40 passed**, 0 failed, against isolated source-exact files.
+- `PYTHONPATH=src python -m pytest tests -q`: **40 passed**, 113
   additional subtests, 0 failures.
 - `python -m compileall` on the selected source/tests/tools: PASS.
 - Broker/backend static `systemd-analyze verify`: **2/2** passed,
