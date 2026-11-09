@@ -48,14 +48,14 @@ class TestInstallerSubstantial(unittest.TestCase):
                               capture_output=True, text=True)
         self.assertNotEqual(proc.returncode, 0)
 
-    def test_install_plan_present(self):
+    def test_render_backend_unit_text(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location("inst", str(INSTALLER))
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        plan = mod.install_plan(Path("."))
-        self.assertTrue(isinstance(plan, dict))
-        self.assertTrue("directories" in plan and plan["directories"])
+        unit = mod.render_unit_template("backend")
+        self.assertIn("NoNewPrivileges", unit)
+        self.assertIn("/opt/catl/venv/bin/python", unit)
 
     def test_render_broker_unit_text(self):
         import importlib.util
