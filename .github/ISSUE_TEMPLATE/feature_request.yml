@@ -1,0 +1,30 @@
+name: Feature request
+description: Propose an improvement to CATL
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What limitation or workflow problem does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security-boundary impact
+      description: Does this change tool authority, approvals, IPC, audit, identities, network access, credentials or release trust?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
