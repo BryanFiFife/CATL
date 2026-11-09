@@ -15,6 +15,21 @@ MEMORY_CEILINGS = {
 }
 MAX_TASKS = 64
 
+# No path or namespace imports are present in the reviewed CATL units.
+# A drop-in can use these settings to expose additional host data, remount a
+# writable tree, or join a different network namespace while the original
+# sandbox settings still appear enabled. Refuse any unreviewed value.
+NO_UNREVIEWED_MOUNTS_OR_NAMESPACES = {
+    'BindPaths': 'unreviewed writable bind mount',
+    'BindReadOnlyPaths': 'unreviewed host path exposure',
+    'NetworkNamespacePath': 'unreviewed externally selected network namespace',
+    'JoinsNamespaceOf': 'unreviewed namespace sharing with another unit',
+    'RootDirectory': 'unreviewed alternate filesystem root',
+    'RootImage': 'unreviewed alternate filesystem image',
+    'TemporaryFileSystem': 'unreviewed mount-overlay configuration',
+}
+
+
 STRICT_PROPERTIES = {
     'ProtectKernelLogs': 'yes',
     'ProtectClock': 'yes',
@@ -72,4 +87,8 @@ def assess_runtime_gates(properties: Mapping[str, str], expected_user: str) -> l
     for name, expected in STRICT_PROPERTIES.items():
         check('runtime_' + name, properties.get(name) == expected,
               name + ' must be ' + expected + ' in effective service properties')
+    for name, rationale in NO_UNREVIEWED_MOUNTS_OR_NAMESPACES.items():
+        actual = properties.get(name, '')
+        check('no_unreviewed_' + name, isinstance(actual, str) and actual.strip() == '',
+              name + ' must be empty in reviewed profile: ' + rationale)
     return findings
