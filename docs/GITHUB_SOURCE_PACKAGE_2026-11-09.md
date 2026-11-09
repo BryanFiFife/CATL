@@ -37,7 +37,7 @@ complete current source in the isolated ChatGPT execution environment.
 
 ## Acceptance and licensing
 
-- New scoped tests: 39/39 source-exact offline unittests, including 10,000
+- New scoped tests: 40/40 source-exact offline unittests, including 10,000
   deterministic hostile systemd property mutations. See
   [earlier offline evidence](LOCAL_ACCEPTANCE_2026-11-09.md) and [mount/namespace fix](MOUNT_NAMESPACE_GUARD_2026-11-09.md).
 - Earlier full Linux 707-discovery acceptance evidence is historical to an
