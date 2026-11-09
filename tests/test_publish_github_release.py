@@ -66,11 +66,11 @@ class PublisherSafety(unittest.TestCase):
                 self.assertNotIn("--publish", argv)
                 return self.URL
             if argv[1] == "api":
-                return json.dumps({"tag_name": pub.TAG, "target_commitish": self.COMMIT,
-                                   "draft": True, "assets": [
-                                       {"name": "a.zip", "size": 3},
-                                       {"name": "sha.txt", "size": 4},
-                                   ]})
+                return json.dumps([{"tag_name": pub.TAG, "target_commitish": self.COMMIT,
+                                    "draft": True, "assets": [
+                                        {"name": "a.zip", "size": 3},
+                                        {"name": "sha.txt", "size": 4},
+                                    ]}])
             self.fail(f"unexpected command {argv}")
         with tempfile.TemporaryDirectory() as tmp:
             archive, checksum = Path(tmp) / "a.zip", Path(tmp) / "sha.txt"
@@ -82,10 +82,18 @@ class PublisherSafety(unittest.TestCase):
                                   Path(tmp) / "notes.md")
         self.assertEqual(url, self.URL)
 
+    def test_publish_rejects_missing_draft_listing(self):
+        calls = iter(["", pub.REPO, self.URL, json.dumps([])])
+        with patch.object(pub, "checked", side_effect=lambda *args, **kwargs: next(calls)), patch.object(
+                pub, "verify_tag_absent", return_value=None):
+            with self.assertRaisesRegex(pub.PublishError, "absent or duplicated"):
+                pub.publish("gh", self.COMMIT, Path("/tmp/a.zip"),
+                            Path("/tmp/sha.txt"), Path("/tmp/notes.md"))
+
     def test_publish_rejects_draft_target_to_wrong_commit(self):
         calls = iter(["", pub.REPO, self.URL,
-                      json.dumps({"tag_name": pub.TAG, "target_commitish": "b" * 40,
-                                  "draft": True, "assets": []})])
+                      json.dumps([{"tag_name": pub.TAG, "target_commitish": "b" * 40,
+                                   "draft": True, "assets": []}])])
         with patch.object(pub, "checked", side_effect=lambda *args, **kwargs: next(calls)), patch.object(
                 pub, "verify_tag_absent", return_value=None):
             with self.assertRaisesRegex(pub.PublishError, "unexpected tag, commit"):
