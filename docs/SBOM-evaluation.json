@@ -1,63 +1,81 @@
 {
   "bomFormat": "CycloneDX",
-  "specVersion": "1.6",
-  "serialNumber": "urn:uuid:b7642282-9747-4b1b-975a-8fbc2e41706c",
-  "version": 1,
-  "metadata": {
-    "timestamp": "2026-11-07T00:00:00Z",
-    "component": {
-      "type": "application",
-      "name": "caledapt-agent-trust",
-      "version": "0.5.0"
-    },
-    "properties": [
-      {
-        "name": "scope",
-        "value": "Local Python 3.13.5 test environment; installed dependency inventory, NOT a complete locked/reproducible supply-chain manifest."
-      }
-    ]
-  },
   "components": [
     {
-      "type": "library",
-      "name": "jsonschema",
-      "version": "4.26.0",
-      "purl": "pkg:pypi/jsonschema@4.26.0"
-    },
-    {
-      "type": "library",
+      "bom-ref": "pkg:pypi/attrs@26.1.0",
       "name": "attrs",
-      "version": "26.1.0",
-      "purl": "pkg:pypi/attrs@26.1.0"
+      "purl": "pkg:pypi/attrs@26.1.0",
+      "type": "library",
+      "version": "26.1.0"
     },
     {
+      "bom-ref": "pkg:pypi/cryptography@50.0.2",
+      "name": "cryptography",
+      "purl": "pkg:pypi/cryptography@50.0.2",
       "type": "library",
+      "version": "50.0.2"
+    },
+    {
+      "bom-ref": "pkg:pypi/jsonschema@4.26.0",
+      "name": "jsonschema",
+      "purl": "pkg:pypi/jsonschema@4.26.0",
+      "type": "library",
+      "version": "4.26.0"
+    },
+    {
+      "bom-ref": "pkg:pypi/jsonschema-specifications@2025.9.1",
       "name": "jsonschema-specifications",
-      "version": "2025.9.1",
-      "purl": "pkg:pypi/jsonschema-specifications@2025.9.1"
+      "purl": "pkg:pypi/jsonschema-specifications@2025.9.1",
+      "type": "library",
+      "version": "2025.9.1"
     },
     {
-      "type": "library",
+      "bom-ref": "pkg:pypi/referencing@0.37.0",
       "name": "referencing",
-      "version": "0.37.0",
-      "purl": "pkg:pypi/referencing@0.37.0"
+      "purl": "pkg:pypi/referencing@0.37.0",
+      "type": "library",
+      "version": "0.37.0"
     },
     {
-      "type": "library",
+      "bom-ref": "pkg:pypi/rpds-py@2026.5.1",
       "name": "rpds-py",
-      "version": "2026.5.1",
-      "purl": "pkg:pypi/rpds-py@2026.5.1"
+      "purl": "pkg:pypi/rpds-py@2026.5.1",
+      "type": "library",
+      "version": "2026.5.1"
     }
   ],
   "dependencies": [
     {
-      "ref": "pkg:pypi/jsonschema@4.26.0",
       "dependsOn": [
-        "pkg:pypi/attrs@26.1.0",
-        "pkg:pypi/jsonschema-specifications@2025.9.1",
-        "pkg:pypi/referencing@0.37.0",
-        "pkg:pypi/rpds-py@2026.5.1"
-      ]
+        "pkg:pypi/cryptography@50.0.2",
+        "pkg:pypi/jsonschema@4.26.0"
+      ],
+      "ref": "pkg:pypi/caledapt-agent-trust@0.11.0rc1"
     }
-  ]
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:pypi/caledapt-agent-trust@0.11.0rc1",
+      "name": "caledapt-agent-trust",
+      "type": "application",
+      "version": "0.11.0rc1"
+    },
+    "properties": [
+      {
+        "name": "catl:scope",
+        "value": "PINNED_AUDIT_INVENTORY_ONLY"
+      },
+      {
+        "name": "catl:source",
+        "value": "pyproject.toml + requirements-security-audit.txt"
+      },
+      {
+        "name": "catl:limitation",
+        "value": "Not an installed environment inventory, complete dependency lock, vulnerability scan or licence audit"
+      }
+    ]
+  },
+  "serialNumber": "urn:uuid:fcb02031-247e-5172-ada4-80c151b6b653",
+  "specVersion": "1.6",
+  "version": 1
 }
