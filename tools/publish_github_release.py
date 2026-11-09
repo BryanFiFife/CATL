@@ -118,9 +118,15 @@ def publish(gh: str, expected: str, archive: Path, checksum: Path, notes: Path) 
                    "--latest=false"])
     # GitHub drafts can have no backing Git tag until they are published.
     # Verify the draft's target_commitish and attached assets instead.
-    payload = json.loads(checked([gh, "api", f"repos/{REPO}/releases/tags/{TAG}"]))
-    if (payload.get("tag_name") != TAG or payload.get("target_commitish") != expected
-            or payload.get("draft") is not True):
+    # GET /releases/tags/{tag} excludes drafts; list recent releases instead.
+    releases = json.loads(checked([gh, "api", f"repos/{REPO}/releases?per_page=100"]))
+    if not isinstance(releases, list):
+        raise PublishError("GitHub releases listing has unexpected shape")
+    candidates = [item for item in releases if item.get("tag_name") == TAG]
+    if len(candidates) != 1:
+        raise PublishError("new draft absent or duplicated in recent releases listing")
+    payload = candidates[0]
+    if (payload.get("target_commitish") != expected or payload.get("draft") is not True):
         raise PublishError("created draft has unexpected tag, commit or publication state")
     found = {asset.get("name"): asset for asset in payload.get("assets", [])}
     for path in (archive, checksum):
