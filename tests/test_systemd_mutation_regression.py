@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 from catl.host_audit import REQUIRED, assess_unit
-from catl.systemd_runtime_gates import MEMORY_CEILINGS, STRICT_PROPERTIES
+from catl.systemd_runtime_gates import MEMORY_CEILINGS, STRICT_PROPERTIES, NO_UNREVIEWED_MOUNTS_OR_NAMESPACES
 
 
 def broker_properties() -> dict[str, str]:
@@ -50,6 +50,7 @@ class DeterministicHostileServiceMutations(unittest.TestCase):
             'SupplementaryGroups', 'RestrictAddressFamilies',
             'ReadWritePaths', 'ProtectSystem', 'CapabilityBoundingSet',
             'KeyringMode',
+            *NO_UNREVIEWED_MOUNTS_OR_NAMESPACES,
         ]
         candidates = (
             'infinity', '999999999999999', '-1', ' ', '42MB',
@@ -65,6 +66,8 @@ class DeterministicHostileServiceMutations(unittest.TestCase):
                 value = '/tmp'
             if key in ('User', 'Group', 'SupplementaryGroups') and value == base[key]:
                 value = 'root'
+            if key in NO_UNREVIEWED_MOUNTS_OR_NAMESPACES and not value.strip():
+                value = '/tmp/forbidden'
             properties[key] = value
             result = assess_unit('catl-broker.service', properties, 'catl-broker')
             self.assertFalse(result['passed'], f'accepted trial {index}: {key}={value!r}')
