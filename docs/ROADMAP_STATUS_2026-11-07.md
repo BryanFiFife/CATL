@@ -146,8 +146,8 @@ namespace (`JoinsNamespaceOf=untrusted.service`). Those three false
 acceptances were reproduced on source-exact code before the fix.
 
 The revised effective-property checks now refuse seven unreviewed mount and
-namespace controls. **39/39** isolated Python unittest cases passed;
-**39/39 pytest** cases plus **110 pytest subtests** passed. This includes
+namespace controls. **40/40** isolated Python unittest cases passed;
+**40/40 pytest** cases plus **113 pytest subtests** passed. This includes
 10,000 deterministic negative service-property mutations expanded to include
 the new settings, and integrated `host-audit` rejection tests. Both reviewed
 systemd templates passed `systemd-analyze verify` together on temporary
