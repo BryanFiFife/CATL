@@ -89,3 +89,14 @@ python tools/release_pack.py --verify /tmp/CATL-v0.11.0rc1-source.zip
 
 These commands are a **required next gate**, not evidence that they have
 already run successfully at the new commit.
+
+## Subsequent focused acceptance — 9 November mount/namespace fix
+
+Following the earlier 36/36 result above, a false-positive systemd
+host-audit path was discovered and corrected. The isolated suite is now
+**40/40 unittest**, **40/40 pytest with 113 subtests**, and the fixed-seed
+10,000 hostile service-property regression remains passing.
+An additional test exercises the full `systemctl show` parsing and
+`host_audit.run()` path using simulated responses.
+See [correction evidence](MOUNT_NAMESPACE_GUARD_2026-11-09.md).
+The external and full-native exclusions above still apply.
