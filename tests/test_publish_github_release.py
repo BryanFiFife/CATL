@@ -15,7 +15,7 @@ import publish_github_release as pub
 
 class PublisherSafety(unittest.TestCase):
     COMMIT = "a" * 40
-    URL = "https://github.com/BryanFiFife/CATL/releases/tag/v0.11.0rc1"
+    URL = "https://github.com/BryanFiFife/CATL/releases/tag/v0.11.0rc2"
 
     def test_reject_non_commit_input(self):
         for wrong in ("a" * 39, "A" * 40, "../main", "main", ""):
