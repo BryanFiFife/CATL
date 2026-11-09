@@ -79,14 +79,14 @@ def install(args):
               Path("/var/lib/catl-tools/work"), Path("/etc/catl")]:
         d.mkdir(parents=True, exist_ok=True)
         os.chmod(d, 0o700)
-    venv = Path("/opt/carl-venv")
+    venv = Path("/opt/catl-venv")
     if not venv.exists():
         subprocess.run(["python3", "-m", "venv", str(venv)], check=True)
     subprocess.run([str(venv / "bin" / "python"), "-m", "pip", "install", "--no-cache-dir",
                     "cryptography==50.0.2", "jsonschema==4.26.0"], check=True)
     subprocess.run([str(venv / "bin" / "python"), "-m", "pip", "install", ".", "--no-build-isolation"],
                     cwd=root, check=True)
-    policy = Path("/etc/carl/policy.json")
+    policy = Path("/etc/catl/policy.json")
     if not policy.exists():
         policy.parent.mkdir(parents=True, exist_ok=True)
         import shutil
@@ -97,7 +97,7 @@ def install(args):
 def verify_installed(args):
     print("=== post-install verification ===")
     failures = 0
-    for p in ["/opt/carl-venv/bin/python", "/etc/carl/policy.json", "/var/lib/carl/state"]:
+    for p in ["/opt/catl-venv/bin/python", "/etc/catl/policy.json", "/var/lib/catl/state"]:
         if not Path(p).exists():
             failures += 1
             print("[FAIL] missing:", p)
